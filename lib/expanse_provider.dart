@@ -16,8 +16,16 @@ class ExpenseProvider extends ChangeNotifier {
 
   // ── Tab ─────────────────────────────────────────────────
   int _tabIndex = 0;
+  final PageController _pageController = PageController(initialPage: 0);
   int get tabIndex => _tabIndex;
+  PageController get pageController => _pageController;
   void setTab(int i) {
+    _pageController.jumpToPage(i);
+    // _pageController.animateToPage(i, duration: const Duration(milliseconds: 200), curve: Curves.ease);
+    _tabIndex = i;
+    notifyListeners();
+  }
+  void updateTabIndex(int i) {
     _tabIndex = i;
     notifyListeners();
   }

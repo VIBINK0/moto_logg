@@ -9,6 +9,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'expanse_provider.dart';
 import 'firebase_options.dart';
+import 'fuel_card.dart';
 import 'login_screen.dart';
 
 // ──────────────────────────────────────────────────────────
@@ -43,13 +45,13 @@ void main() async {
 // THEME CONSTANTS
 // ──────────────────────────────────────────────────────────
 
-const _bg            = Color(0xFF0D0D0D);
-const _cardBg        = Color(0xFF1A1A1A);
-const _iconBg        = Color(0xFF222222);
-const _textPrimary   = Colors.white;
+const _bg = Color(0xFF0D0D0D);
+const _cardBg = Color(0xFF1A1A1A);
+const _iconBg = Color(0xFF222222);
+const _textPrimary = Colors.white;
 const _textSecondary = Color(0xFFAAAAAA);
-const _textDim       = Color(0xFF666666);
-const _border        = Color(0xFF2A2A2A);
+const _textDim = Color(0xFF666666);
+const _border = Color(0xFF2A2A2A);
 
 // ──────────────────────────────────────────────────────────
 // MODELS
@@ -60,19 +62,27 @@ enum ExpenseCategory { fuel, service, maintenance, modifications }
 extension CatX on ExpenseCategory {
   String get label {
     switch (this) {
-      case ExpenseCategory.fuel:          return 'Fuel';
-      case ExpenseCategory.service:       return 'Service';
-      case ExpenseCategory.maintenance:   return 'Maintenance';
-      case ExpenseCategory.modifications: return 'Modifications';
+      case ExpenseCategory.fuel:
+        return 'Fuel';
+      case ExpenseCategory.service:
+        return 'Service';
+      case ExpenseCategory.maintenance:
+        return 'Maintenance';
+      case ExpenseCategory.modifications:
+        return 'Modifications';
     }
   }
 
   IconData get iconData {
     switch (this) {
-      case ExpenseCategory.fuel:          return Icons.local_gas_station_rounded;
-      case ExpenseCategory.service:       return Icons.build_circle_rounded;
-      case ExpenseCategory.maintenance:   return Icons.settings_rounded;
-      case ExpenseCategory.modifications: return Icons.construction_rounded;
+      case ExpenseCategory.fuel:
+        return Icons.local_gas_station_rounded;
+      case ExpenseCategory.service:
+        return Icons.build_circle_rounded;
+      case ExpenseCategory.maintenance:
+        return Icons.settings_rounded;
+      case ExpenseCategory.modifications:
+        return Icons.construction_rounded;
     }
   }
 
@@ -99,7 +109,7 @@ class Expense {
     return Expense(
       id: doc.id,
       category: ExpenseCategory.values.firstWhere(
-            (e) => e.firestoreKey == (d['category'] as String),
+        (e) => e.firestoreKey == (d['category'] as String),
         orElse: () => ExpenseCategory.fuel,
       ),
       amount: (d['amount'] as num).toDouble(),
@@ -125,11 +135,11 @@ class FirestoreService {
   FirestoreService({required this.uid});
 
   // Per-user collection: users/{uid}/expenses
-  CollectionReference<Map<String, dynamic>> get _col =>
-      FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('expenses');
+  CollectionReference<Map<String, dynamic>> get _col => FirebaseFirestore
+      .instance
+      .collection('users')
+      .doc(uid)
+      .collection('expenses');
 
   Stream<List<Expense>> stream() => _col
       .orderBy('date', descending: true)
@@ -231,8 +241,31 @@ class _Root extends StatelessWidget {
         child: const Icon(Icons.add, color: Colors.black, size: 28),
       ),
       floatingActionButtonLocation:
-      FloatingActionButtonLocation.miniCenterDocked,
-      body: pages[provider.tabIndex],
+          FloatingActionButtonLocation.miniCenterDocked,
+      // body: pages[provider.tabIndex],
+      body: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: PageView.builder(
+            scrollBehavior: ScrollBehavior().copyWith(
+              scrollbars: false,
+              dragDevices: {
+                PointerDeviceKind.trackpad,
+                PointerDeviceKind.mouse,
+                PointerDeviceKind.touch,
+              },
+            ),
+            onPageChanged: (index) {
+              context.read<ExpenseProvider>().updateTabIndex(index);
+            },
+            itemCount: pages.length,
+            controller: provider.pageController,
+            itemBuilder: (_, index) {
+              return pages[index];
+            },
+          ),
+        ),
+      ),
       bottomNavigationBar: _BottomNav(current: provider.tabIndex),
     );
   }
@@ -290,29 +323,32 @@ class _BottomNav extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(items[i].$1,
-                          size: 22,
-                          color: active ? _textPrimary : _textDim),
+                      Icon(
+                        items[i].$1,
+                        size: 22,
+                        color: active ? _textPrimary : _textDim,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         items[i].$2,
                         style: TextStyle(
                           color: active ? _textPrimary : _textDim,
                           fontSize: 10,
-                          fontWeight:
-                          active ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: active
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                       ),
                       const SizedBox(height: 3),
                       active
                           ? Container(
-                        width: 20,
-                        height: 2,
-                        decoration: BoxDecoration(
-                          color: _textPrimary,
-                          borderRadius: BorderRadius.circular(1),
-                        ),
-                      )
+                              width: 20,
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: _textPrimary,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            )
                           : const SizedBox(height: 2),
                     ],
                   ),
@@ -341,10 +377,10 @@ class HomeScreen extends StatelessWidget {
     return StreamBuilder<List<Expense>>(
       stream: provider.allExpenses,
       builder: (ctx, snap) {
-        final all      = snap.data ?? [];
+        final all = snap.data ?? [];
         final filtered = provider.applyFilter(all);
-        final totals   = provider.totals(filtered);
-        final grand    = provider.grand(filtered);
+        final totals = provider.totals(filtered);
+        final grand = provider.grand(filtered);
 
         return Center(
           child: Container(
@@ -375,8 +411,8 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Show first part of email as name
-    final user  = FirebaseAuth.instance.currentUser;
-    final name  = user?.email?.split('@').first ?? 'Rider';
+    final user = FirebaseAuth.instance.currentUser;
+    final name = user?.email?.split('@').first ?? 'Rider';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -398,7 +434,7 @@ class _Header extends StatelessWidget {
                       letterSpacing: -0.5,
                     ),
                   ),
-                  const Text('🤘', style: TextStyle(fontSize: 22)),
+                  const Text('😎', style: TextStyle(fontSize: 22)),
                 ],
               ),
               const SizedBox(height: 2),
@@ -416,8 +452,11 @@ class _Header extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: _border),
             ),
-            child: const Icon(Icons.notifications_outlined,
-                color: _textPrimary, size: 20),
+            child: const Icon(
+              Icons.notifications_outlined,
+              color: _textPrimary,
+              size: 20,
+            ),
           ),
         ],
       ),
@@ -454,16 +493,21 @@ class _TotalCard extends StatelessWidget {
                 color: _iconBg,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(Icons.account_balance_wallet_rounded,
-                  color: _textPrimary, size: 22),
+              child: const Icon(
+                Icons.account_balance_wallet_rounded,
+                color: _textPrimary,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Total Expenses',
-                      style: TextStyle(color: _textSecondary, fontSize: 12)),
+                  const Text(
+                    'Total Expenses',
+                    style: TextStyle(color: _textSecondary, fontSize: 12),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     '₹${_fmt(grand)}',
@@ -481,7 +525,10 @@ class _TotalCard extends StatelessWidget {
             GestureDetector(
               onTap: () => _showFilterSheet(context, provider),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: _iconBg,
                   borderRadius: BorderRadius.circular(20),
@@ -493,13 +540,17 @@ class _TotalCard extends StatelessWidget {
                     Text(
                       provider.filterLabel,
                       style: const TextStyle(
-                          color: _textSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500),
+                        color: _textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(width: 3),
-                    const Icon(Icons.keyboard_arrow_down_rounded,
-                        color: _textSecondary, size: 16),
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: _textSecondary,
+                      size: 16,
+                    ),
                   ],
                 ),
               ),
@@ -534,17 +585,28 @@ class _FilterSheet extends StatelessWidget {
   const _FilterSheet();
 
   static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ExpenseProvider>();
     final currentYear = DateTime.now().year;
-    final years = List.generate(currentYear - 2020 + 1, (i) => 2020 + i)
-        .reversed
-        .toList();
+    final years = List.generate(
+      currentYear - 2020 + 1,
+      (i) => 2020 + i,
+    ).reversed.toList();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
@@ -556,18 +618,22 @@ class _FilterSheet extends StatelessWidget {
           // drag handle
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                  color: _border, borderRadius: BorderRadius.circular(2)),
+                color: _border,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 20),
           const Text(
             'Filter by',
             style: TextStyle(
-                color: _textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w700),
+              color: _textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 20),
 
@@ -584,12 +650,13 @@ class _FilterSheet extends StatelessWidget {
                   duration: const Duration(milliseconds: 160),
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 18, vertical: 10),
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: active ? _textPrimary : _iconBg,
                     borderRadius: BorderRadius.circular(24),
-                    border:
-                    Border.all(color: active ? _textPrimary : _border),
+                    border: Border.all(color: active ? _textPrimary : _border),
                   ),
                   child: Text(
                     mode,
@@ -607,12 +674,15 @@ class _FilterSheet extends StatelessWidget {
           // ── Month chips ───────────────────────────────
           if (provider.filterMode == 'Month') ...[
             const SizedBox(height: 20),
-            const Text('Month',
-                style: TextStyle(
-                    color: _textDim,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5)),
+            const Text(
+              'Month',
+              style: TextStyle(
+                color: _textDim,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -628,13 +698,16 @@ class _FilterSheet extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 140),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: sel ? _textPrimary : _iconBg,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: sel ? _textPrimary : _border,
-                          width: 0.8),
+                        color: sel ? _textPrimary : _border,
+                        width: 0.8,
+                      ),
                     ),
                     child: Text(
                       _months[i],
@@ -650,12 +723,15 @@ class _FilterSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             // Year sub-selector when in Month mode
-            const Text('Year',
-                style: TextStyle(
-                    color: _textDim,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5)),
+            const Text(
+              'Year',
+              style: TextStyle(
+                color: _textDim,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -667,13 +743,16 @@ class _FilterSheet extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 140),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: sel ? _textPrimary : _iconBg,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: sel ? _textPrimary : _border,
-                          width: 0.8),
+                        color: sel ? _textPrimary : _border,
+                        width: 0.8,
+                      ),
                     ),
                     child: Text(
                       '$y',
@@ -692,12 +771,15 @@ class _FilterSheet extends StatelessWidget {
           // ── Year chips ────────────────────────────────
           if (provider.filterMode == 'Year') ...[
             const SizedBox(height: 20),
-            const Text('Year',
-                style: TextStyle(
-                    color: _textDim,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5)),
+            const Text(
+              'Year',
+              style: TextStyle(
+                color: _textDim,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -712,13 +794,16 @@ class _FilterSheet extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 140),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: sel ? _textPrimary : _iconBg,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: sel ? _textPrimary : _border,
-                          width: 0.8),
+                        color: sel ? _textPrimary : _border,
+                        width: 0.8,
+                      ),
                     ),
                     child: Text(
                       '$y',
@@ -751,82 +836,149 @@ class _BikeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (ctx, constraints) {
-      final w = constraints.maxWidth;
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        final w = constraints.maxWidth;
 
-      const containerH = 540.0;
-      const bikeTop    = 110.0;
-      const bikeH      = 270.0;
-      const cardW      = 138.0;
-      const cardH      = 72.0;
-      const iconR      = 26.0;
+        const containerH = 540.0;
+        const bikeTop = 110.0;
+        const bikeH = 270.0;
+        const cardW = 138.0;
+        const cardH = 72.0;
+        const iconR = 26.0;
 
-      const modCardL  = 10.0;
-      const modCardT  = 60.0;
-      const modIconCx = modCardL + cardW / 2;
-      const modIconCy = modCardT - iconR - 6;
+        const modCardL = 10.0;
+        const modCardT = 60.0;
+        const modIconCx = modCardL + cardW / 2;
+        const modIconCy = modCardT - iconR - 6;
 
-      final fuelCardL  = w - cardW - 10;
-      const fuelCardT  = 60.0;
-      final fuelIconCx = fuelCardL + cardW / 2;
-      const fuelIconCy = fuelCardT - iconR - 6;
+        final fuelCardL = w - cardW - 10;
+        const fuelCardT = 60.0;
+        final fuelIconCx = fuelCardL + cardW / 2;
+        const fuelIconCy = fuelCardT - iconR - 6;
 
-      const maintCardL  = 10.0;
-      const maintCardT  = bikeTop + bikeH + 56;
-      const maintIconCx = maintCardL + cardW / 2;
-      const maintIconCy = bikeTop + bikeH + 16;
+        const maintCardL = 10.0;
+        const maintCardT = bikeTop + bikeH + 56;
+        const maintIconCx = maintCardL + cardW / 2;
+        const maintIconCy = bikeTop + bikeH + 16;
 
-      final serviceCardL  = w - cardW - 10;
-      const serviceCardT  = bikeTop + bikeH + 56;
-      final serviceIconCx = serviceCardL + cardW / 2;
-      const serviceIconCy = bikeTop + bikeH + 16;
+        final serviceCardL = w - cardW - 10;
+        const serviceCardT = bikeTop + bikeH + 56;
+        final serviceIconCx = serviceCardL + cardW / 2;
+        const serviceIconCy = bikeTop + bikeH + 16;
 
-      final modCardCenter     = Offset(modCardL     + cardW / 2, modCardT     + cardH / 2);
-      final fuelCardCenter    = Offset(fuelCardL    + cardW / 2, fuelCardT    + cardH / 2);
-      final maintCardCenter   = Offset(maintCardL   + cardW / 2, maintCardT   + cardH / 2);
-      final serviceCardCenter = Offset(serviceCardL + cardW / 2, serviceCardT + cardH / 2);
+        final modCardCenter = Offset(
+          modCardL + cardW / 2,
+          modCardT + cardH / 2,
+        );
+        final fuelCardCenter = Offset(
+          fuelCardL + cardW / 2,
+          fuelCardT + cardH / 2,
+        );
+        final maintCardCenter = Offset(
+          maintCardL + cardW / 2,
+          maintCardT + cardH / 2,
+        );
+        final serviceCardCenter = Offset(
+          serviceCardL + cardW / 2,
+          serviceCardT + cardH / 2,
+        );
 
-      final modBikePt     = Offset(w * 0.36, bikeTop + bikeH * 0.28);
-      final fuelBikePt    = Offset(w * 0.50, bikeTop + bikeH * 0.20);
-      final maintBikePt   = Offset(w * 0.34, bikeTop + bikeH * 0.55);
-      final serviceBikePt = Offset(w * 0.49, bikeTop + bikeH * 0.72);
+        final modBikePt = Offset(w * 0.36, bikeTop + bikeH * 0.28);
+        final fuelBikePt = Offset(w * 0.50, bikeTop + bikeH * 0.20);
+        final maintBikePt = Offset(w * 0.34, bikeTop + bikeH * 0.55);
+        final serviceBikePt = Offset(w * 0.49, bikeTop + bikeH * 0.72);
 
-      return SizedBox(
-        height: containerH,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              top: bikeTop, left: 0, right: 0, height: bikeH,
-              child: Image.asset(
-                'asset/ns.png',
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) =>
-                    CustomPaint(painter: FallbackBikePainter()),
+        return SizedBox(
+          height: containerH,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                top: bikeTop,
+                left: 0,
+                right: 0,
+                height: bikeH,
+                child: Image.asset(
+                  'asset/ns.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) =>
+                      CustomPaint(painter: FallbackBikePainter()),
+                ),
               ),
-            ),
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _CurvedArrowsPainter(arrows: [
-                  _ArrowData(modCardCenter,     modBikePt,     curveDir: -2),
-                  _ArrowData(fuelCardCenter,    fuelBikePt,    curveDir:  2),
-                  _ArrowData(maintCardCenter,   maintBikePt,   curveDir: -1),
-                  _ArrowData(serviceCardCenter, serviceBikePt, curveDir: -2),
-                ]),
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _CurvedArrowsPainter(
+                    arrows: [
+                      _ArrowData(modCardCenter, modBikePt, curveDir: -2),
+                      _ArrowData(fuelCardCenter, fuelBikePt, curveDir: 2),
+                      _ArrowData(maintCardCenter, maintBikePt, curveDir: -1),
+                      _ArrowData(
+                        serviceCardCenter,
+                        serviceBikePt,
+                        curveDir: -2,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            _IconBubble(cx: modIconCx,     cy: modIconCy,     icon: ExpenseCategory.modifications.iconData),
-            _CategoryCard(left: modCardL,     top: modCardT,     w: cardW, h: cardH, category: ExpenseCategory.modifications, amount: totals[ExpenseCategory.modifications] ?? 0),
-            _IconBubble(cx: fuelIconCx,    cy: fuelIconCy,    icon: ExpenseCategory.fuel.iconData),
-            _CategoryCard(left: fuelCardL,    top: fuelCardT,    w: cardW, h: cardH, category: ExpenseCategory.fuel,          amount: totals[ExpenseCategory.fuel]          ?? 0),
-            _IconBubble(cx: maintIconCx,   cy: maintIconCy,   icon: ExpenseCategory.maintenance.iconData),
-            _CategoryCard(left: maintCardL,   top: maintCardT,   w: cardW, h: cardH, category: ExpenseCategory.maintenance,   amount: totals[ExpenseCategory.maintenance]   ?? 0),
-            _IconBubble(cx: serviceIconCx, cy: serviceIconCy, icon: ExpenseCategory.service.iconData),
-            _CategoryCard(left: serviceCardL, top: serviceCardT, w: cardW, h: cardH, category: ExpenseCategory.service,       amount: totals[ExpenseCategory.service]       ?? 0),
-          ],
-        ),
-      );
-    });
+              _IconBubble(
+                cx: modIconCx,
+                cy: modIconCy,
+                icon: ExpenseCategory.modifications.iconData,
+              ),
+              _CategoryCard(
+                left: modCardL,
+                top: modCardT,
+                w: cardW,
+                h: cardH,
+                category: ExpenseCategory.modifications,
+                amount: totals[ExpenseCategory.modifications] ?? 0,
+              ),
+              _IconBubble(
+                cx: fuelIconCx,
+                cy: fuelIconCy,
+                icon: ExpenseCategory.fuel.iconData,
+              ),
+              _FuelCard(
+                left: fuelCardL,
+                top: fuelCardT,
+                w: cardW,
+                h: cardH,
+                category: ExpenseCategory.fuel,
+                amount: totals[ExpenseCategory.fuel] ?? 0,
+              ),
+              _IconBubble(
+                cx: maintIconCx,
+                cy: maintIconCy,
+                icon: ExpenseCategory.maintenance.iconData,
+              ),
+              _CategoryCard(
+                left: maintCardL,
+                top: maintCardT,
+                w: cardW,
+                h: cardH,
+                category: ExpenseCategory.maintenance,
+                amount: totals[ExpenseCategory.maintenance] ?? 0,
+              ),
+              _IconBubble(
+                cx: serviceIconCx,
+                cy: serviceIconCy,
+                icon: ExpenseCategory.service.iconData,
+              ),
+              _CategoryCard(
+                left: serviceCardL,
+                top: serviceCardT,
+                w: cardW,
+                h: cardH,
+                category: ExpenseCategory.service,
+                amount: totals[ExpenseCategory.service] ?? 0,
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -843,9 +995,11 @@ class _IconBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     const r = 26.0;
     return Positioned(
-      left: cx - r, top: cy - r,
+      left: cx - r,
+      top: cy - r,
       child: Container(
-        width: r * 2, height: r * 2,
+        width: r * 2,
+        height: r * 2,
         decoration: const BoxDecoration(color: _iconBg, shape: BoxShape.circle),
         child: Icon(icon, color: _textPrimary, size: 20),
       ),
@@ -863,17 +1017,22 @@ class _CategoryCard extends StatelessWidget {
   final double amount;
 
   const _CategoryCard({
-    required this.left, required this.top,
-    required this.w,    required this.h,
-    required this.category, required this.amount,
+    required this.left,
+    required this.top,
+    required this.w,
+    required this.h,
+    required this.category,
+    required this.amount,
   });
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: left, top: top,
+      left: left,
+      top: top,
       child: Container(
-        width: w, height: h,
+        width: w,
+        height: h,
         decoration: BoxDecoration(
           color: _cardBg,
           borderRadius: BorderRadius.circular(16),
@@ -884,12 +1043,129 @@ class _CategoryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(category.label,
-                style: const TextStyle(color: _textPrimary, fontSize: 13, fontWeight: FontWeight.w500)),
+            Text(
+              category.label,
+              style: const TextStyle(
+                color: _textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('₹${_fmt(amount)}',
-                style: const TextStyle(color: _textPrimary, fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
+            Text(
+              '₹${_fmt(amount)}',
+              style: const TextStyle(
+                color: _textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+// ──────────────────────────────────────────────────────────
+// CATEGORY CARD
+// ──────────────────────────────────────────────────────────
+
+class _FuelCard extends StatefulWidget {
+  final double left, top, w, h;
+  final ExpenseCategory category;
+  final double amount;
+
+  const _FuelCard({
+    required this.left,
+    required this.top,
+    required this.w,
+    required this.h,
+    required this.category,
+    required this.amount,
+  });
+
+  @override
+  State<_FuelCard> createState() => _FuelCardState();
+}
+
+class _FuelCardState extends State<_FuelCard> with SingleTickerProviderStateMixin{
+  late AnimationController _controller;
+
+  double fuelLevel = 0.6;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+    AnimationController(vsync: this, duration: const Duration(seconds: 2))
+      ..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: widget.left,
+      top: widget.top,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: widget.w,
+          height: widget.h,
+          decoration: BoxDecoration(
+            color: _cardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _border, width: 0.8),
+          ),
+
+          child: Stack(
+            children: [
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return CustomPaint(
+                    size:  Size(widget.w, widget.h),
+                    painter: FuelWavePainter(
+                      animationValue: _controller.value,
+                      level: .6,
+                    ),
+                  );
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.category.label,
+                      style: const TextStyle(
+                        color: _textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '₹${_fmt(widget.amount)}',
+                      style: const TextStyle(
+                        color: _textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -920,7 +1196,7 @@ class _CurvedArrowsPainter extends CustomPainter {
 
     for (final a in arrows) {
       final from = a.from, to = a.to;
-      final mid  = Offset((from.dx + to.dx) / 2, (from.dy + to.dy) / 2);
+      final mid = Offset((from.dx + to.dx) / 2, (from.dy + to.dy) / 2);
       final perp = Offset(
         -(to.dy - from.dy) * 0.25 * a.curveDir,
         (to.dx - from.dx) * 0.25 * a.curveDir,
@@ -937,10 +1213,22 @@ class _CurvedArrowsPainter extends CustomPainter {
       final tangent = to - ctrl;
       final angle = math.atan2(tangent.dy, tangent.dx);
       const aLen = 9.0, aAng = 0.45;
-      canvas.drawLine(to,
-          Offset(to.dx - aLen * math.cos(angle - aAng), to.dy - aLen * math.sin(angle - aAng)), p);
-      canvas.drawLine(to,
-          Offset(to.dx - aLen * math.cos(angle + aAng), to.dy - aLen * math.sin(angle + aAng)), p);
+      canvas.drawLine(
+        to,
+        Offset(
+          to.dx - aLen * math.cos(angle - aAng),
+          to.dy - aLen * math.sin(angle - aAng),
+        ),
+        p,
+      );
+      canvas.drawLine(
+        to,
+        Offset(
+          to.dx - aLen * math.cos(angle + aAng),
+          to.dy - aLen * math.sin(angle + aAng),
+        ),
+        p,
+      );
     }
   }
 
@@ -988,12 +1276,16 @@ class FallbackBikePainter extends CustomPainter {
 
     canvas.drawPath(
       Path()
-        ..moveTo(w * 0.23, h * 0.60) ..lineTo(w * 0.40, h * 0.32)
-        ..lineTo(w * 0.60, h * 0.36) ..lineTo(w * 0.65, h * 0.60)
-        ..lineTo(w * 0.23, h * 0.60)
-        ..moveTo(w * 0.40, h * 0.32) ..lineTo(w * 0.52, h * 0.24)
+        ..moveTo(w * 0.23, h * 0.60)
+        ..lineTo(w * 0.40, h * 0.32)
         ..lineTo(w * 0.60, h * 0.36)
-        ..moveTo(w * 0.60, h * 0.36) ..lineTo(w * 0.77, h * 0.60),
+        ..lineTo(w * 0.65, h * 0.60)
+        ..lineTo(w * 0.23, h * 0.60)
+        ..moveTo(w * 0.40, h * 0.32)
+        ..lineTo(w * 0.52, h * 0.24)
+        ..lineTo(w * 0.60, h * 0.36)
+        ..moveTo(w * 0.60, h * 0.36)
+        ..lineTo(w * 0.77, h * 0.60),
       p,
     );
 
@@ -1016,11 +1308,17 @@ class FallbackBikePainter extends CustomPainter {
     canvas.drawPath(seat, p);
 
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.40, h * 0.50, w * 0.20, h * 0.12), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(w * 0.40, h * 0.50, w * 0.20, h * 0.12),
+        const Radius.circular(3),
+      ),
       fill,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.40, h * 0.50, w * 0.20, h * 0.12), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(w * 0.40, h * 0.50, w * 0.20, h * 0.12),
+        const Radius.circular(3),
+      ),
       p,
     );
     for (int i = 1; i <= 2; i++) {
@@ -1033,11 +1331,27 @@ class FallbackBikePainter extends CustomPainter {
     p.strokeWidth = 2;
 
     canvas.drawPath(
-      Path()..moveTo(w * 0.40, h * 0.59)..quadraticBezierTo(w * 0.30, h * 0.65, w * 0.16, h * 0.60),
+      Path()
+        ..moveTo(w * 0.40, h * 0.59)
+        ..quadraticBezierTo(w * 0.30, h * 0.65, w * 0.16, h * 0.60),
       p..strokeWidth = 2.5,
     );
-    canvas.drawOval(Rect.fromCenter(center: Offset(w * 0.82, h * 0.34), width: 18, height: 14), fill);
-    canvas.drawOval(Rect.fromCenter(center: Offset(w * 0.82, h * 0.34), width: 18, height: 14), p..strokeWidth = 1.5);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(w * 0.82, h * 0.34),
+        width: 18,
+        height: 14,
+      ),
+      fill,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(w * 0.82, h * 0.34),
+        width: 18,
+        height: 14,
+      ),
+      p..strokeWidth = 1.5,
+    );
   }
 
   @override
@@ -1056,10 +1370,10 @@ class AddExpenseSheet extends StatefulWidget {
 
 class _AddExpenseSheetState extends State<AddExpenseSheet> {
   ExpenseCategory _cat = ExpenseCategory.fuel;
-  final _amtCtrl  = TextEditingController();
+  final _amtCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
-  DateTime _date  = DateTime.now();
-  bool _loading   = false;
+  DateTime _date = DateTime.now();
+  bool _loading = false;
   String? _err;
 
   @override
@@ -1077,7 +1391,11 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
       lastDate: DateTime.now(),
       builder: (c, child) => Theme(
         data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(primary: _textPrimary, onPrimary: Colors.black, surface: _cardBg),
+          colorScheme: const ColorScheme.dark(
+            primary: _textPrimary,
+            onPrimary: Colors.black,
+            surface: _cardBg,
+          ),
         ),
         child: child!,
       ),
@@ -1087,15 +1405,27 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
 
   Future<void> _save() async {
     final amt = double.tryParse(_amtCtrl.text.trim());
-    if (amt == null || amt <= 0) { setState(() => _err = 'Enter a valid amount'); return; }
-    setState(() { _loading = true; _err = null; });
+    if (amt == null || amt <= 0) {
+      setState(() => _err = 'Enter a valid amount');
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _err = null;
+    });
     try {
       await context.read<ExpenseProvider>().add(
-        category: _cat, amount: amt, date: _date, notes: _noteCtrl.text.trim(),
+        category: _cat,
+        amount: amt,
+        date: _date,
+        notes: _noteCtrl.text.trim(),
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      setState(() { _err = 'Error: $e'; _loading = false; });
+      setState(() {
+        _err = 'Error: $e';
+        _loading = false;
+      });
     }
   }
 
@@ -1109,35 +1439,65 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
-          Center(child: Container(width: 40, height: 4,
-              decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(2)))),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: _border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           const SizedBox(height: 20),
-          const Text('Add Expense',
-              style: TextStyle(color: _textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
+          const Text(
+            'Add Expense',
+            style: TextStyle(
+              color: _textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 20),
           const _SheetLabel('CATEGORY'),
           const SizedBox(height: 8),
           Wrap(
-            spacing: 8, runSpacing: 8,
+            spacing: 8,
+            runSpacing: 8,
             children: ExpenseCategory.values.map((c) {
               final sel = c == _cat;
               return GestureDetector(
                 onTap: () => setState(() => _cat = c),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 160),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 9,
+                  ),
                   decoration: BoxDecoration(
                     color: sel ? _textPrimary : _iconBg,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: sel ? _textPrimary : _border),
                   ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(c.iconData, size: 14, color: sel ? Colors.black : _textSecondary),
-                    const SizedBox(width: 6),
-                    Text(c.label,
-                        style: TextStyle(color: sel ? Colors.black : _textSecondary,
-                            fontSize: 12, fontWeight: FontWeight.w600)),
-                  ]),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        c.iconData,
+                        size: 14,
+                        color: sel ? Colors.black : _textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        c.label,
+                        style: TextStyle(
+                          color: sel ? Colors.black : _textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }).toList(),
@@ -1145,8 +1505,11 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
           const SizedBox(height: 18),
           const _SheetLabel('AMOUNT (₹)'),
           const SizedBox(height: 8),
-          _SheetField(controller: _amtCtrl, hint: '0',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+          _SheetField(
+            controller: _amtCtrl,
+            hint: '0',
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
           const SizedBox(height: 14),
           const _SheetLabel('DATE'),
           const SizedBox(height: 8),
@@ -1154,40 +1517,72 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             onTap: _pickDate,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              decoration: BoxDecoration(color: _iconBg, borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _border)),
-              child: Row(children: [
-                const Icon(Icons.calendar_today_rounded, color: _textSecondary, size: 16),
-                const SizedBox(width: 10),
-                Text(
-                  '${_date.day.toString().padLeft(2, '0')} / '
-                      '${_date.month.toString().padLeft(2, '0')} / '
-                      '${_date.year}',
-                  style: const TextStyle(color: _textPrimary, fontSize: 14),
-                ),
-              ]),
+              decoration: BoxDecoration(
+                color: _iconBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today_rounded,
+                    color: _textSecondary,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${_date.day.toString().padLeft(2, '0')} / '
+                    '${_date.month.toString().padLeft(2, '0')} / '
+                    '${_date.year}',
+                    style: const TextStyle(color: _textPrimary, fontSize: 14),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 14),
           const _SheetLabel('NOTES (OPTIONAL)'),
           const SizedBox(height: 8),
-          _SheetField(controller: _noteCtrl, hint: 'e.g. Petrol at HP station', maxLines: 2),
+          _SheetField(
+            controller: _noteCtrl,
+            hint: 'e.g. Petrol at HP station',
+            maxLines: 2,
+          ),
           if (_err != null) ...[
             const SizedBox(height: 8),
-            Text(_err!, style: const TextStyle(color: Color(0xFF888888), fontSize: 12)),
+            Text(
+              _err!,
+              style: const TextStyle(color: Color(0xFF888888), fontSize: 12),
+            ),
           ],
           const SizedBox(height: 24),
           GestureDetector(
             onTap: _loading ? null : _save,
             child: Container(
-              width: double.infinity, height: 54,
-              decoration: BoxDecoration(color: _textPrimary, borderRadius: BorderRadius.circular(16)),
+              width: double.infinity,
+              height: 54,
+              decoration: BoxDecoration(
+                color: _textPrimary,
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Center(
                 child: _loading
-                    ? const SizedBox(width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                    : const Text('Save Expense',
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 15)),
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Text(
+                        'Save Expense',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -1201,8 +1596,15 @@ class _SheetLabel extends StatelessWidget {
   final String text;
   const _SheetLabel(this.text);
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(color: _textDim, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.5));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      color: _textDim,
+      fontSize: 10,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 1.5,
+    ),
+  );
 }
 
 class _SheetField extends StatelessWidget {
@@ -1211,8 +1613,12 @@ class _SheetField extends StatelessWidget {
   final TextInputType? keyboardType;
   final int maxLines;
 
-  const _SheetField({required this.controller, required this.hint,
-    this.keyboardType, this.maxLines = 1});
+  const _SheetField({
+    required this.controller,
+    required this.hint,
+    this.keyboardType,
+    this.maxLines = 1,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1224,11 +1630,24 @@ class _SheetField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: _textDim),
-        filled: true, fillColor: _iconBg,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF555555), width: 1.5)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        filled: true,
+        fillColor: _iconBg,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF555555), width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
       ),
     );
   }
@@ -1250,43 +1669,78 @@ class ExpenseListScreen extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
-            child: Text('All Expenses',
-                style: TextStyle(color: _textPrimary, fontSize: 24, fontWeight: FontWeight.w700)),
+            child: Text(
+              'All Expenses',
+              style: TextStyle(
+                color: _textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           Expanded(
             child: StreamBuilder<List<Expense>>(
               stream: provider.allExpenses,
               builder: (ctx, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(strokeWidth: 1.5, color: _textDim));
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: _textDim,
+                    ),
+                  );
                 }
                 if (snap.hasError) {
-                  return Center(child: Text('Error: ${snap.error}',
-                      style: const TextStyle(color: _textDim, fontSize: 12)));
+                  return Center(
+                    child: Text(
+                      'Error: ${snap.error}',
+                      style: const TextStyle(color: _textDim, fontSize: 12),
+                    ),
+                  );
                 }
                 final list = snap.data ?? [];
                 if (list.isEmpty) {
-                  return const Center(child: Text('No expenses yet.',
-                      style: TextStyle(color: _textDim, fontSize: 13)));
+                  return const Center(
+                    child: Text(
+                      'No expenses yet.',
+                      style: TextStyle(color: _textDim, fontSize: 13),
+                    ),
+                  );
                 }
 
                 final grouped = <String, List<Expense>>{};
                 for (final e in list) {
-                  final k = '${e.date.year}-${e.date.month.toString().padLeft(2, '0')}';
+                  final k =
+                      '${e.date.year}-${e.date.month.toString().padLeft(2, '0')}';
                   grouped.putIfAbsent(k, () => []).add(e);
                 }
-                final keys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-                const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                final keys = grouped.keys.toList()
+                  ..sort((a, b) => b.compareTo(a));
+                const months = [
+                  'Jan',
+                  'Feb',
+                  'Mar',
+                  'Apr',
+                  'May',
+                  'Jun',
+                  'Jul',
+                  'Aug',
+                  'Sep',
+                  'Oct',
+                  'Nov',
+                  'Dec',
+                ];
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: keys.length,
                   itemBuilder: (_, i) {
-                    final k     = keys[i];
+                    final k = keys[i];
                     final items = grouped[k]!;
                     final total = items.fold<double>(0, (s, e) => s + e.amount);
                     final parts = k.split('-');
-                    final label = '${months[int.parse(parts[1]) - 1]} ${parts[0]}';
+                    final label =
+                        '${months[int.parse(parts[1]) - 1]} ${parts[0]}';
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1294,12 +1748,31 @@ class ExpenseListScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(label, style: const TextStyle(color: _textSecondary, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
-                            Text('₹${_fmt(total)}', style: const TextStyle(color: _textSecondary, fontSize: 12)),
+                            Text(
+                              label,
+                              style: const TextStyle(
+                                color: _textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Text(
+                              '₹${_fmt(total)}',
+                              style: const TextStyle(
+                                color: _textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        ...items.map((e) => _ExpenseTile(expense: e, onDelete: () => provider.delete(e.id))),
+                        ...items.map(
+                          (e) => _ExpenseTile(
+                            expense: e,
+                            onDelete: () => provider.delete(e.id),
+                          ),
+                        ),
                       ],
                     );
                   },
@@ -1327,39 +1800,83 @@ class _ExpenseTile extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(color: const Color(0xFF1F1F1F), borderRadius: BorderRadius.circular(14)),
-        child: const Icon(Icons.delete_outline_rounded, color: _textDim, size: 20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1F1F1F),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(
+          Icons.delete_outline_rounded,
+          color: _textDim,
+          size: 20,
+        ),
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _border, width: 0.8)),
-        child: Row(children: [
-          Container(width: 40, height: 40,
-              decoration: BoxDecoration(color: _iconBg, borderRadius: BorderRadius.circular(12)),
-              child: Icon(expense.category.iconData, color: _textPrimary, size: 18)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(expense.category.label,
-                  style: const TextStyle(color: _textPrimary, fontSize: 13, fontWeight: FontWeight.w500)),
-              if (expense.notes != null && expense.notes!.isNotEmpty)
-                Text(expense.notes!, style: const TextStyle(color: _textDim, fontSize: 11),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-            ]),
-          ),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('₹${_fmt(expense.amount)}',
-                style: const TextStyle(color: _textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
-            Text(
-              '${expense.date.day.toString().padLeft(2, '0')}/'
+        decoration: BoxDecoration(
+          color: _cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _border, width: 0.8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _iconBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                expense.category.iconData,
+                color: _textPrimary,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    expense.category.label,
+                    style: const TextStyle(
+                      color: _textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (expense.notes != null && expense.notes!.isNotEmpty)
+                    Text(
+                      expense.notes!,
+                      style: const TextStyle(color: _textDim, fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '₹${_fmt(expense.amount)}',
+                  style: const TextStyle(
+                    color: _textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  '${expense.date.day.toString().padLeft(2, '0')}/'
                   '${expense.date.month.toString().padLeft(2, '0')}/'
                   '${expense.date.year}',
-              style: const TextStyle(color: _textDim, fontSize: 10),
+                  style: const TextStyle(color: _textDim, fontSize: 10),
+                ),
+              ],
             ),
-          ]),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -1379,58 +1896,108 @@ class ReportsScreen extends StatelessWidget {
       child: StreamBuilder<List<Expense>>(
         stream: provider.allExpenses,
         builder: (ctx, snap) {
-          final all    = snap.data ?? [];
+          final all = snap.data ?? [];
           final totals = provider.totals(all);
-          final grand  = provider.grand(all);
+          final grand = provider.grand(all);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Reports',
-                    style: TextStyle(color: _textPrimary, fontSize: 24, fontWeight: FontWeight.w700)),
+                const Text(
+                  'Reports',
+                  style: TextStyle(
+                    color: _textPrimary,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 24),
                 ...ExpenseCategory.values.map((cat) {
                   final amt = totals[cat] ?? 0;
                   final pct = grand > 0 ? amt / grand : 0.0;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 20),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Row(children: [
-                          Icon(cat.iconData, size: 16, color: _textSecondary),
-                          const SizedBox(width: 8),
-                          Text(cat.label, style: const TextStyle(color: _textPrimary, fontSize: 13)),
-                        ]),
-                        Text('₹${_fmt(amt)}',
-                            style: const TextStyle(color: _textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                      ]),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: pct, minHeight: 6,
-                          backgroundColor: _iconBg,
-                          valueColor: const AlwaysStoppedAnimation(_textPrimary),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  cat.iconData,
+                                  size: 16,
+                                  color: _textSecondary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  cat.label,
+                                  style: const TextStyle(
+                                    color: _textPrimary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '₹${_fmt(amt)}',
+                              style: const TextStyle(
+                                color: _textPrimary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('${(pct * 100).toStringAsFixed(1)}% of total',
-                          style: const TextStyle(color: _textDim, fontSize: 10)),
-                    ]),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: pct,
+                            minHeight: 6,
+                            backgroundColor: _iconBg,
+                            valueColor: const AlwaysStoppedAnimation(
+                              _textPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${(pct * 100).toStringAsFixed(1)}% of total',
+                          style: const TextStyle(color: _textDim, fontSize: 10),
+                        ),
+                      ],
+                    ),
                   );
                 }),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: _border, width: 0.8)),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('Grand Total', style: TextStyle(color: _textSecondary, fontSize: 13)),
-                    Text('₹${_fmt(grand)}',
-                        style: const TextStyle(color: _textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
-                  ]),
+                  decoration: BoxDecoration(
+                    color: _cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _border, width: 0.8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Grand Total',
+                        style: TextStyle(color: _textSecondary, fontSize: 13),
+                      ),
+                      Text(
+                        '₹${_fmt(grand)}',
+                        style: const TextStyle(
+                          color: _textPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1457,8 +2024,14 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Settings',
-                style: TextStyle(color: _textPrimary, fontSize: 24, fontWeight: FontWeight.w700)),
+            const Text(
+              'Settings',
+              style: TextStyle(
+                color: _textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 24),
 
             // Logged-in user info card
@@ -1470,26 +2043,67 @@ class SettingsScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: _border, width: 0.8),
               ),
-              child: Row(children: [
-                Container(width: 40, height: 40,
-                    decoration: BoxDecoration(color: _iconBg, shape: BoxShape.circle),
-                    child: const Icon(Icons.person_rounded, color: _textPrimary, size: 18)),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Signed in as', style: TextStyle(color: _textDim, fontSize: 10)),
-                    Text(user?.email ?? '—',
-                        style: const TextStyle(color: _textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ]),
-                ),
-              ]),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _iconBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.person_rounded,
+                      color: _textPrimary,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Signed in as',
+                          style: TextStyle(color: _textDim, fontSize: 10),
+                        ),
+                        Text(
+                          user?.email ?? '—',
+                          style: const TextStyle(
+                            color: _textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
 
-            const _SettingsTile(icon: Icons.directions_bike_rounded, title: 'Bike Name', subtitle: 'Bajaj Pulsar NS 200'),
-            const _SettingsTile(icon: Icons.notifications_rounded, title: 'Notifications', subtitle: 'Enabled'),
-            const _SettingsTile(icon: Icons.delete_sweep_rounded, title: 'Clear All Data', subtitle: 'Permanently remove all expenses'),
-            const _SettingsTile(icon: Icons.info_outline_rounded, title: 'About', subtitle: 'MOTO LOGG v1.0.0'),
+            const _SettingsTile(
+              icon: Icons.directions_bike_rounded,
+              title: 'Bike Name',
+              subtitle: 'Bajaj Pulsar NS 200',
+            ),
+            const _SettingsTile(
+              icon: Icons.notifications_rounded,
+              title: 'Notifications',
+              subtitle: 'Enabled',
+            ),
+            const _SettingsTile(
+              icon: Icons.delete_sweep_rounded,
+              title: 'Clear All Data',
+              subtitle: 'Permanently remove all expenses',
+            ),
+            const _SettingsTile(
+              icon: Icons.info_outline_rounded,
+              title: 'About',
+              subtitle: 'MOTO LOGG v1.0.0',
+            ),
 
             const SizedBox(height: 8),
 
@@ -1500,19 +2114,37 @@ class SettingsScreen extends StatelessWidget {
                 // AuthWrapper will automatically show LoginScreen
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: _cardBg,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: _border, width: 0.8),
                 ),
-                child: const Row(children: [
-                  SizedBox(width: 40, height: 40,
-                      child: Icon(Icons.logout_rounded, color: Color(0xFF888888), size: 18)),
-                  SizedBox(width: 14),
-                  Text('Sign Out',
-                      style: TextStyle(color: Color(0xFF888888), fontSize: 13, fontWeight: FontWeight.w500)),
-                ]),
+                child: const Row(
+                  children: [
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        Icons.logout_rounded,
+                        color: Color(0xFF888888),
+                        size: 18,
+                      ),
+                    ),
+                    SizedBox(width: 14),
+                    Text(
+                      'Sign Out',
+                      style: TextStyle(
+                        color: Color(0xFF888888),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1525,28 +2157,56 @@ class SettingsScreen extends StatelessWidget {
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title, subtitle;
-  const _SettingsTile({required this.icon, required this.title, required this.subtitle});
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _border, width: 0.8)),
-      child: Row(children: [
-        Container(width: 40, height: 40,
-            decoration: BoxDecoration(color: _iconBg, borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: _textPrimary, size: 18)),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(color: _textPrimary, fontSize: 13, fontWeight: FontWeight.w500)),
-            Text(subtitle, style: const TextStyle(color: _textDim, fontSize: 11)),
-          ]),
-        ),
-        const Icon(Icons.chevron_right_rounded, color: _textDim, size: 18),
-      ]),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _border, width: 0.8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: _iconBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: _textPrimary, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: _textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: _textDim, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: _textDim, size: 18),
+        ],
+      ),
     );
   }
 }
@@ -1557,6 +2217,7 @@ class _SettingsTile extends StatelessWidget {
 
 String _fmt(double v) {
   final s = v.toStringAsFixed(0);
-  if (s.length > 3) return '${s.substring(0, s.length - 3)},${s.substring(s.length - 3)}';
+  if (s.length > 3)
+    return '${s.substring(0, s.length - 3)},${s.substring(s.length - 3)}';
   return s;
 }
