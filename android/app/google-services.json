@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "307266324548",
+    "project_id": "bike-logg",
+    "storage_bucket": "bike-logg.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:307266324548:android:8609d0ba88fab165789411",
+        "android_client_info": {
+          "package_name": "com.example.MOTOLOGG"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC10lJfuF2HHgy5eMQKJxZ-E6_rE2N4zzo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

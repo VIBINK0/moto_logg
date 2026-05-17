@@ -1,0 +1,39 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "bike-logg",
+          "appId": "1:307266324548:android:8609d0ba88fab165789411",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "bike-logg",
+          "configurations": {
+            "android": "1:307266324548:android:8609d0ba88fab165789411",
+            "ios": "1:307266324548:ios:e56dcee9bc91c5c2789411",
+            "macos": "1:307266324548:ios:e56dcee9bc91c5c2789411",
+            "web": "1:307266324548:web:31db56f53a3bc495789411",
+            "windows": "1:307266324548:web:77d4a93341fe8aff789411"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
