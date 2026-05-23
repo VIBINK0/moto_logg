@@ -57,7 +57,7 @@ const _border = Color(0xFF2A2A2A);
 // MODELS
 // ──────────────────────────────────────────────────────────
 
-enum ExpenseCategory { fuel, service, maintenance, modifications }
+enum ExpenseCategory { fuel, service, accessories, modifications }
 
 extension CatX on ExpenseCategory {
   String get label {
@@ -66,8 +66,8 @@ extension CatX on ExpenseCategory {
         return 'Fuel';
       case ExpenseCategory.service:
         return 'Service';
-      case ExpenseCategory.maintenance:
-        return 'Maintenance';
+      case ExpenseCategory.accessories:
+        return 'Accessories';
       case ExpenseCategory.modifications:
         return 'Modifications';
     }
@@ -79,8 +79,8 @@ extension CatX on ExpenseCategory {
         return Icons.local_gas_station_rounded;
       case ExpenseCategory.service:
         return Icons.build_circle_rounded;
-      case ExpenseCategory.maintenance:
-        return Icons.settings_rounded;
+      case ExpenseCategory.accessories:
+        return Icons.extension_rounded;
       case ExpenseCategory.modifications:
         return Icons.construction_rounded;
     }
@@ -951,15 +951,15 @@ class _BikeSection extends StatelessWidget {
               _IconBubble(
                 cx: maintIconCx,
                 cy: maintIconCy,
-                icon: ExpenseCategory.maintenance.iconData,
+                icon: ExpenseCategory.accessories.iconData,
               ),
               _CategoryCard(
                 left: maintCardL,
                 top: maintCardT,
                 w: cardW,
                 h: cardH,
-                category: ExpenseCategory.maintenance,
-                amount: totals[ExpenseCategory.maintenance] ?? 0,
+                category: ExpenseCategory.accessories,
+                amount: totals[ExpenseCategory.accessories] ?? 0,
               ),
               _IconBubble(
                 cx: serviceIconCx,
