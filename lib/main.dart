@@ -8,8 +8,12 @@
 //    • Settings screen has a real Sign Out button
 // ═══════════════════════════════════════════════════════════
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:MOTOLOGG/providers/bike_provider.dart';
+import 'package:MOTOLOGG/screens/bike_selection_screen.dart';
+import 'package:MOTOLOGG/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -205,7 +209,17 @@ class AuthWrapper extends StatelessWidget {
         if (!snapshot.hasData || snapshot.data == null) {
           return const LoginScreen();
         }
-
+        final user = snapshot.data!;
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => BikeProvider()),
+            ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+          ],
+          child: _BikeCheckWrapper(
+            userId: user.uid,
+            dashboard: const _Root(),
+          ),
+        );
         // Logged in → provide ExpenseProvider scoped to this user
         return ChangeNotifierProvider(
           create: (_) => ExpenseProvider(),
@@ -216,6 +230,48 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
+class _BikeCheckWrapper extends StatefulWidget {
+  final String userId;
+  final Widget dashboard;
+  const _BikeCheckWrapper({
+    required this.userId,
+    required this.dashboard,
+  });
+  @override
+  State<_BikeCheckWrapper> createState() => _BikeCheckWrapperState();
+}
+class _BikeCheckWrapperState extends State<_BikeCheckWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize bike provider with user ID
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BikeProvider>().initialize(widget.userId);
+    });
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<BikeProvider>(
+      builder: (context, provider, _) {
+        // Loading bike data
+        if (provider.isLoading) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          );
+        }
+        // No bike selected - show selection screen
+        if (!provider.hasBikeSelected) {
+          return const BikeSelectionScreen();
+        }
+        // Bike selected - show dashboard
+        return widget.dashboard;
+      },
+    );
+  }
+}
 // ──────────────────────────────────────────────────────────
 // ROOT — holds bottom nav
 // ──────────────────────────────────────────────────────────
@@ -413,6 +469,7 @@ class _Header extends StatelessWidget {
     // Show first part of email as name
     final user = FirebaseAuth.instance.currentUser;
     final name = user?.email?.split('@').first ?? 'Rider';
+    final bikeProvider = context.watch<BikeProvider>();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -438,8 +495,8 @@ class _Header extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 2),
-              const Text(
-                'Track your NS 200 expenses',
+              Text(
+                'Track your ${bikeProvider.selectedBike?.name} expenses',
                 style: TextStyle(color: _textSecondary, fontSize: 13),
               ),
             ],
@@ -888,6 +945,7 @@ class _BikeSection extends StatelessWidget {
         final fuelBikePt = Offset(w * 0.50, bikeTop + bikeH * 0.20);
         final maintBikePt = Offset(w * 0.34, bikeTop + bikeH * 0.55);
         final serviceBikePt = Offset(w * 0.49, bikeTop + bikeH * 0.72);
+        final bikeProvider = context.watch<BikeProvider>();
 
         return SizedBox(
           height: containerH,
@@ -900,7 +958,7 @@ class _BikeSection extends StatelessWidget {
                 right: 0,
                 height: bikeH,
                 child: Image.asset(
-                  'asset/ns.png',
+                  bikeProvider.selectedBike?.imageUrl??'asset/ns.png',
                   fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) =>
                       CustomPaint(painter: FallbackBikePainter()),
@@ -1796,6 +1854,35 @@ class _ExpenseTile extends StatelessWidget {
     return Dismissible(
       key: Key(expense.id),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        final completer = Completer<bool>();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            padding: EdgeInsets.all(5),
+            // width: 300,
+            content: const Text(
+              'Interesting choice. Want to rethink it? 👀',
+            ),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Chaos Mode',
+              onPressed: () {
+                if (!completer.isCompleted) {
+                  completer.complete(true);
+                }
+              },
+            ),
+          ),
+        ).closed.then((_) {
+          if (!completer.isCompleted) {
+            completer.complete(false);
+          }
+        });
+
+        return completer.future;
+      },
       onDismissed: (_) => onDelete(),
       background: Container(
         alignment: Alignment.centerRight,
@@ -2110,8 +2197,7 @@ class SettingsScreen extends StatelessWidget {
             // Sign Out button
             GestureDetector(
               onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                // AuthWrapper will automatically show LoginScreen
+                AuthService.signOut(context);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
