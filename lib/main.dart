@@ -220,11 +220,6 @@ class AuthWrapper extends StatelessWidget {
             dashboard: const _Root(),
           ),
         );
-        // Logged in → provide ExpenseProvider scoped to this user
-        return ChangeNotifierProvider(
-          create: (_) => ExpenseProvider(),
-          child: const _Root(),
-        );
       },
     );
   }
@@ -2105,6 +2100,8 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final bikeProvider = context.watch<BikeProvider>();
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -2171,11 +2168,17 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
 
-            const _SettingsTile(
-              icon: Icons.directions_bike_rounded,
-              title: 'Bike Name',
-              subtitle: 'Bajaj Pulsar NS 200',
-            ),
+             GestureDetector(
+               onTap: (){
+                 bikeProvider.clearSelectedBike();
+                 context.read<ExpenseProvider>().setTab(0);
+               },
+               child: _SettingsTile(
+                icon: Icons.directions_bike_rounded,
+                title: 'Change Bike',
+                subtitle: '${bikeProvider.selectedBike?.brandName} ${bikeProvider.selectedBike?.name}',
+                           ),
+             ),
             const _SettingsTile(
               icon: Icons.notifications_rounded,
               title: 'Notifications',
@@ -2303,7 +2306,8 @@ class _SettingsTile extends StatelessWidget {
 
 String _fmt(double v) {
   final s = v.toStringAsFixed(0);
-  if (s.length > 3)
+  if (s.length > 3) {
     return '${s.substring(0, s.length - 3)},${s.substring(s.length - 3)}';
+  }
   return s;
 }

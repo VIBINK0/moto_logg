@@ -40,6 +40,18 @@ class BikeProvider with ChangeNotifier {
     return success;
   }
 
+
+
+  /// Clear selection on logout
+  Future<void> clearSelectedBike() async {
+    if (_currentUserId != null) {
+      await BikeStorageService.clearSelectedBike(_currentUserId!);
+    }
+    _selectedBike = null;
+    notifyListeners();
+  }
+
+
   /// Clear selection on logout
   Future<void> clearOnLogout() async {
     if (_currentUserId != null) {

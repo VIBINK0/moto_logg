@@ -3,10 +3,11 @@
 class BikeModel {
   final String id;
   final String name;
+  final String brandName;
   final String imageUrl;
   final String tagline;
-  final int engineCC;
-  final int horsepower;
+  final num engineCC;
+  final num horsepower;
 
   const BikeModel({
     required this.id,
@@ -15,6 +16,7 @@ class BikeModel {
     required this.tagline,
     required this.engineCC,
     required this.horsepower,
+    required this.brandName,
   });
 
   Map<String, dynamic> toJson() => {
@@ -24,6 +26,7 @@ class BikeModel {
     'tagline': tagline,
     'engineCC': engineCC,
     'horsepower': horsepower,
+    'brandName': brandName,
   };
 
   factory BikeModel.fromJson(Map<String, dynamic> json) => BikeModel(
@@ -31,8 +34,9 @@ class BikeModel {
     name: json['name'] as String,
     imageUrl: json['imageUrl'] as String,
     tagline: json['tagline'] as String,
-    engineCC: json['engineCC'] as int,
-    horsepower: json['horsepower'] as int,
+    engineCC: json['engineCC'] ,
+    horsepower: json['horsepower'],
+    brandName: json['brandName'],
   );
 
   static List<BikeModel> get availableBikes => const [
@@ -41,16 +45,18 @@ class BikeModel {
       name: 'NS 200',
       imageUrl: 'asset/ns.png',
       tagline: 'Born to Race',
-      engineCC: 200,
-      horsepower: 19,
+      engineCC: 199.5,
+      horsepower: 24.5,
+      brandName: 'Bajaj Pulsar',
     ),
     BikeModel(
       id: 'unicorn-160',
       name: 'Unicorn',
       imageUrl: 'asset/unicorn.png',
       tagline: 'Make Life a Ride',
-      engineCC: 160,
-      horsepower: 14,
+      engineCC: 162.71,
+      horsepower: 12.73,
+      brandName: 'Honda',
     ),
   ];
 }
