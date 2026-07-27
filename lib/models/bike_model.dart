@@ -58,5 +58,14 @@ class BikeModel {
       horsepower: 12.73,
       brandName: 'Honda',
     ),
+    BikeModel(
+      id: 'mt-15',
+      name: 'MT-15',
+      imageUrl: 'asset/mt15.jpeg', // make sure you add this asset
+      tagline: 'The Dark Warrior',
+      engineCC: 155.0,
+      horsepower: 18.4,
+      brandName: 'Yamaha',
+    ),
   ];
 }
