@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
 import '../../providers/expense_provider.dart';
 import '../../services/auth_service.dart';
@@ -83,8 +84,7 @@ class SettingsScreen extends StatelessWidget {
 
              GestureDetector(
                onTap: (){
-                 bikeProvider.clearSelectedBike();
-                 context.read<ExpenseProvider>().setTab(0);
+                 Navigator.pushNamed(context, AppRoutes.bikeSettings);
                },
                child: SettingsTile(
                 icon: Icons.directions_bike_rounded,

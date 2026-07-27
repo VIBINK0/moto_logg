@@ -5,6 +5,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../core/routes/app_routes.dart';
 import '../../models/bike_model.dart';
 import '../../providers/bike_provider.dart';
 import '../../widgets/bike_carousel_item.dart';
@@ -71,7 +72,7 @@ class _BikeSelectionScreenState extends State<BikeSelectionScreen>
 
     if (success && mounted) {
       // Navigate to dashboard
-      Navigator.of(context).pushReplacementNamed('/dashboard');
+      Navigator.of(context).pushReplacementNamed(AppRoutes.dashboard);
     } else if (mounted) {
       setState(() => _isSelecting = false);
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1,50 +1,63 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
-import '../../providers/expense_provider.dart';
-import '../../screens/auth/login_screen.dart';
-import '../../screens/root_layout_screen.dart';
-import 'bike_check_wrapper.dart';
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        // Still resolving auth state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: AppColors.bg,
-            body: Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 1.5,
-                color: AppColors.textDim,
-              ),
-            ),
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  StreamSubscription<User?>? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use postFrameCallback to ensure Navigator is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
+        if (!mounted) return;
+        if (user == null) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.login,
+            (route) => false,
+          );
+        } else {
+          // Initialize bike provider for the new user
+          context.read<BikeProvider>().initialize(user.uid);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.dashboard,
+            (route) => false,
           );
         }
+      });
+    });
+  }
 
-        // Not logged in → show Login
-        if (!snapshot.hasData || snapshot.data == null) {
-          return const LoginScreen();
-        }
-        final user = snapshot.data!;
-        return MultiProvider(
-          providers: [
-            ChangeNotifierProvider(create: (_) => BikeProvider()),
-            ChangeNotifierProvider(create: (_) => ExpenseProvider()),
-          ],
-          child: BikeCheckWrapper(
-            userId: user.uid,
-            dashboard: const RootLayoutScreen(),
-          ),
-        );
-      },
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.bg,
+      body: Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 1.5,
+          color: AppColors.textDim,
+        ),
+      ),
     );
   }
 }

@@ -1,48 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
-import '../../screens/bike/bike_selection_screen.dart';
 
-class BikeCheckWrapper extends StatefulWidget {
-  final String userId;
+class BikeCheckWrapper extends StatelessWidget {
   final Widget dashboard;
-  const BikeCheckWrapper({
-    super.key,
-    required this.userId,
-    required this.dashboard,
-  });
-  @override
-  State<BikeCheckWrapper> createState() => _BikeCheckWrapperState();
-}
+  const BikeCheckWrapper({super.key, required this.dashboard});
 
-class _BikeCheckWrapperState extends State<BikeCheckWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    // Initialize bike provider with user ID
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BikeProvider>().initialize(widget.userId);
-    });
-  }
   @override
   Widget build(BuildContext context) {
     return Consumer<BikeProvider>(
       builder: (context, provider, _) {
-        // Loading bike data
         if (provider.isLoading) {
           return const Scaffold(
-            backgroundColor: Colors.black,
+            backgroundColor: AppColors.bg,
             body: Center(
-              child: CircularProgressIndicator(color: Colors.white),
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                color: AppColors.textDim,
+              ),
             ),
           );
         }
-        // No bike selected - show selection screen
+
         if (!provider.hasBikeSelected) {
-          return const BikeSelectionScreen();
+          // Use postFrameCallback for navigation during build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, AppRoutes.bikeSelection);
+          });
+          return const Scaffold(backgroundColor: AppColors.bg);
         }
-        // Bike selected - show dashboard
-        return widget.dashboard;
+
+        return dashboard;
       },
     );
   }

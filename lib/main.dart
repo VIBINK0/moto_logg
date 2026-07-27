@@ -1,9 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'core/routes/app_router.dart';
+import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
-import 'widgets/common/auth_wrapper.dart';
+import 'providers/bike_provider.dart';
+import 'providers/expense_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +21,15 @@ void main() async {
     ),
   );
 
-  runApp(const MotoLedgerApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => BikeProvider()),
+        ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+      ],
+      child: const MotoLedgerApp(),
+    ),
+  );
 }
 
 class MotoLedgerApp extends StatelessWidget {
@@ -29,7 +41,8 @@ class MotoLedgerApp extends StatelessWidget {
       title: 'MOTO LOGG',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const AuthWrapper(),
+      onGenerateRoute: AppRouter.onGenerateRoute,
+      initialRoute: AppRoutes.root,
     );
   }
 }
