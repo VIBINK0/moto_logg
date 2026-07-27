@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../models/bike_model.dart';
-import '../providers/bike_provider.dart';
+import '../../models/bike_model.dart';
+import '../../providers/bike_provider.dart';
 
 class BikeSettingsScreen extends StatelessWidget {
   const BikeSettingsScreen({super.key});

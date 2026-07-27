@@ -1,24 +1,6 @@
-// ═══════════════════════════════════════════════════════════
-//  MOTO LOGG — Login Screen
-//  Firebase Email/Password Auth  |  Dark Biker Theme
-//  File: lib/login_screen.dart
-// ═══════════════════════════════════════════════════════════
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-// ── Theme constants (mirrors main.dart) ──────────────────
-const _bg         = Color(0xFF0D0D0D);
-const _cardBg     = Color(0xFF1A1A1A);
-const _iconBg     = Color(0xFF222222);
-const _textPrimary   = Colors.white;
-const _textSecondary = Color(0xFFAAAAAA);
-const _textDim       = Color(0xFF666666);
-const _border        = Color(0xFF2A2A2A);
-
-// ──────────────────────────────────────────────────────────
-// LOGIN SCREEN
-// ──────────────────────────────────────────────────────────
+import '../../core/constants/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -109,7 +91,6 @@ class _LoginScreenState extends State<LoginScreen>
           email: email, password: password,
         );
       }
-      // AuthWrapper in main.dart will automatically navigate away
     } on FirebaseAuthException catch (e) {
       _setError(_friendlyError(e.code));
     } catch (e) {
@@ -128,12 +109,12 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: _cardBg,
+            backgroundColor: AppColors.cardBg,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             content: const Text(
               'Reset link sent — check your inbox.',
-              style: TextStyle(color: _textPrimary, fontSize: 13),
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 13),
             ),
           ),
         );
@@ -175,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -190,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen>
                   const SizedBox(height: 48),
 
                   // ── Logo / Brand ──────────────────────────
-                  _Logo(),
+                  const _Logo(),
 
                   const SizedBox(height: 40),
 
@@ -198,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen>
                   Text(
                     _isLogin ? 'Welcome back,\nRider.' : 'Join the\npack.',
                     style: const TextStyle(
-                      color: _textPrimary,
+                      color: AppColors.textPrimary,
                       fontSize: 34,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -1.0,
@@ -211,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ? 'Sign in to track your bike expenses.'
                         : 'Create an account to get started.',
                     style: const TextStyle(
-                      color: _textSecondary,
+                      color: AppColors.textSecondary,
                       fontSize: 14,
                     ),
                   ),
@@ -219,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen>
                   const SizedBox(height: 36),
 
                   // ── Email ─────────────────────────────────
-                  _Label('EMAIL'),
+                  const _Label('EMAIL'),
                   const SizedBox(height: 8),
                   _AuthField(
                     controller: _emailCtrl,
@@ -231,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen>
                   const SizedBox(height: 16),
 
                   // ── Password ──────────────────────────────
-                  _Label('PASSWORD'),
+                  const _Label('PASSWORD'),
                   const SizedBox(height: 8),
                   _AuthField(
                     controller: _passwordCtrl,
@@ -244,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen>
                         _obscure
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: _textDim,
+                        color: AppColors.textDim,
                         size: 18,
                       ),
                     ),
@@ -253,7 +234,7 @@ class _LoginScreenState extends State<LoginScreen>
                   // ── Confirm Password (sign-up only) ───────
                   if (!_isLogin) ...[
                     const SizedBox(height: 16),
-                    _Label('CONFIRM PASSWORD'),
+                    const _Label('CONFIRM PASSWORD'),
                     const SizedBox(height: 8),
                     _AuthField(
                       controller: _confirmCtrl,
@@ -273,10 +254,10 @@ class _LoginScreenState extends State<LoginScreen>
                         child: const Text(
                           'Forgot password?',
                           style: TextStyle(
-                            color: _textSecondary,
+                            color: AppColors.textSecondary,
                             fontSize: 12,
                             decoration: TextDecoration.underline,
-                            decorationColor: _textDim,
+                            decorationColor: AppColors.textDim,
                           ),
                         ),
                       ),
@@ -321,7 +302,7 @@ class _LoginScreenState extends State<LoginScreen>
                       width: double.infinity,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: _loading ? _iconBg : _textPrimary,
+                        color: _loading ? AppColors.iconBg : AppColors.textPrimary,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Center(
@@ -330,12 +311,12 @@ class _LoginScreenState extends State<LoginScreen>
                           width: 22, height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: _textDim,
+                            color: AppColors.textDim,
                           ),
                         )
-                            : Text(
-                          _isLogin ? 'Ride In →' : 'Create Account →',
-                          style: const TextStyle(
+                            : const Text(
+                          'Ride In →',
+                          style: TextStyle(
                             color: Colors.black,
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
@@ -352,23 +333,21 @@ class _LoginScreenState extends State<LoginScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        _isLogin
-                            ? "Don't have an account? "
-                            : 'Already have an account? ',
-                        style: const TextStyle(
-                            color: _textDim, fontSize: 13),
+                      const Text(
+                        "Don't have an account? ",
+                        style: TextStyle(
+                            color: AppColors.textDim, fontSize: 13),
                       ),
                       GestureDetector(
                         onTap: _toggleMode,
                         child: Text(
                           _isLogin ? 'Sign Up' : 'Sign In',
                           style: const TextStyle(
-                            color: _textSecondary,
+                            color: AppColors.textSecondary,
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             decoration: TextDecoration.underline,
-                            decorationColor: _textDim,
+                            decorationColor: AppColors.textDim,
                           ),
                         ),
                       ),
@@ -386,11 +365,8 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
-// ──────────────────────────────────────────────────────────
-// LOGO WIDGET
-// ──────────────────────────────────────────────────────────
-
 class _Logo extends StatelessWidget {
+  const _Logo();
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -399,7 +375,7 @@ class _Logo extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: _textPrimary,
+            color: AppColors.textPrimary,
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(
@@ -415,7 +391,7 @@ class _Logo extends StatelessWidget {
             Text(
               'MOTO LOGG',
               style: TextStyle(
-                color: _textPrimary,
+                color: AppColors.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 2.0,
@@ -424,7 +400,7 @@ class _Logo extends StatelessWidget {
             Text(
               'Track Everything',
               style: TextStyle(
-                color: _textDim,
+                color: AppColors.textDim,
                 fontSize: 10,
                 letterSpacing: 1.2,
               ),
@@ -436,10 +412,6 @@ class _Logo extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────────
-// REUSABLE LABEL
-// ──────────────────────────────────────────────────────────
-
 class _Label extends StatelessWidget {
   final String text;
   const _Label(this.text);
@@ -448,17 +420,13 @@ class _Label extends StatelessWidget {
   Widget build(BuildContext context) => Text(
     text,
     style: const TextStyle(
-      color: _textDim,
+      color: AppColors.textDim,
       fontSize: 10,
       fontWeight: FontWeight.w700,
       letterSpacing: 1.8,
     ),
   );
 }
-
-// ──────────────────────────────────────────────────────────
-// REUSABLE AUTH FIELD
-// ──────────────────────────────────────────────────────────
 
 class _AuthField extends StatelessWidget {
   final TextEditingController controller;
@@ -483,13 +451,13 @@ class _AuthField extends StatelessWidget {
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
-      style: const TextStyle(color: _textPrimary, fontSize: 14),
+      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: _textDim, fontSize: 13),
+        hintStyle: const TextStyle(color: AppColors.textDim, fontSize: 13),
         prefixIcon: Padding(
           padding: const EdgeInsets.only(left: 14, right: 10),
-          child: Icon(icon, color: _textDim, size: 18),
+          child: Icon(icon, color: AppColors.textDim, size: 18),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         suffixIcon: suffix != null
@@ -501,14 +469,14 @@ class _AuthField extends StatelessWidget {
         suffixIconConstraints:
         const BoxConstraints(minWidth: 0, minHeight: 0),
         filled: true,
-        fillColor: _iconBg,
+        fillColor: AppColors.iconBg,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _border),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _border, width: 0.8),
+          borderSide: const BorderSide(color: AppColors.border, width: 0.8),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),

@@ -5,10 +5,10 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../models/bike_model.dart';
-import '../providers/bike_provider.dart';
-import '../widgets/bike_carousel_item.dart';
-import '../widgets/industrial_background.dart';
+import '../../models/bike_model.dart';
+import '../../providers/bike_provider.dart';
+import '../../widgets/bike_carousel_item.dart';
+import '../../widgets/industrial_background.dart';
 
 class BikeSelectionScreen extends StatefulWidget {
   const BikeSelectionScreen({super.key});

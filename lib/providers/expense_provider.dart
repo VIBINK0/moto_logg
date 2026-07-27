@@ -1,14 +1,7 @@
-// ═══════════════════════════════════════════════════════════
-//  MOTO LOGG — ExpenseProvider
-//  User-scoped Firestore: users/{uid}/expenses/{docId}
-//  Filter modes: 'All Time' | 'Month' | 'Year'
-//  File: lib/expense_provider.dart
-// ═══════════════════════════════════════════════════════════
-
-// import 'package:MOTOLOGG/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
-import 'main.dart';
+import 'package:flutter/material.dart';
+import '../models/expense_model.dart';
+import '../services/firestore_service.dart';
 
 class ExpenseProvider extends ChangeNotifier {
   FirestoreService get _svc =>
@@ -19,12 +12,15 @@ class ExpenseProvider extends ChangeNotifier {
   final PageController _pageController = PageController(initialPage: 0);
   int get tabIndex => _tabIndex;
   PageController get pageController => _pageController;
+
   void setTab(int i) {
-    _pageController.jumpToPage(i);
-    // _pageController.animateToPage(i, duration: const Duration(milliseconds: 200), curve: Curves.ease);
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(i);
+    }
     _tabIndex = i;
     notifyListeners();
   }
+
   void updateTabIndex(int i) {
     _tabIndex = i;
     notifyListeners();
@@ -54,7 +50,9 @@ class ExpenseProvider extends ChangeNotifier {
 
   void setSelectedYear(int year) {
     _selectedYear = year;
-    _filterMode = 'Year';
+    if (_filterMode == 'All Time') {
+        _filterMode = 'Year';
+    }
     notifyListeners();
   }
 
