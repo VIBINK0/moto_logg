@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/expense_model.dart';
 import '../../providers/expense_provider.dart';
@@ -16,15 +17,28 @@ class ExpenseListScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
-            child: Text(
-              'All Expenses',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'All Expenses',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.calendar),
+                  icon: const Icon(
+                    Icons.calendar_month_rounded,
+                    color: AppColors.textPrimary,
+                    size: 26,
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(

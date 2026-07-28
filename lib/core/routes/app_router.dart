@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/bike/bike_selection_screen.dart';
 import '../../screens/bike/bike_settings_screen.dart';
+import '../../screens/expense/calendar_screen.dart';
 import '../../screens/root_layout_screen.dart';
 import '../../widgets/common/auth_wrapper.dart';
 import '../../widgets/common/bike_check_wrapper.dart';
@@ -35,6 +36,11 @@ class AppRouter {
       case AppRoutes.bikeSettings:
         return MaterialPageRoute(
           builder: (_) => const BikeSettingsScreen(),
+        );
+
+      case AppRoutes.calendar:
+        return MaterialPageRoute(
+          builder: (_) => const CalendarScreen(),
         );
 
       default:
