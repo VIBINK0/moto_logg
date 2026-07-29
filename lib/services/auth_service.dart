@@ -1,5 +1,6 @@
 // Add this to your existing auth service
 
+import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -21,11 +22,7 @@ class AuthService {
 
     // Navigate to login and clear stack
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.login,
-        (route) => false,
-      );
+      context.go(AppRoutes.login);
     }
   }
 }

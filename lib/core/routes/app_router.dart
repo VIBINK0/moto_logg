@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/bike/bike_selection_screen.dart';
 import '../../screens/bike/bike_settings_screen.dart';
@@ -10,53 +10,46 @@ import '../../widgets/common/bike_check_wrapper.dart';
 import 'app_routes.dart';
 
 class AppRouter {
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
-    switch (settings.name) {
-      case AppRoutes.root:
-        return MaterialPageRoute(
-          builder: (_) => const AuthWrapper(),
-        );
-
-      case AppRoutes.login:
-        return MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-        );
-
-      case AppRoutes.bikeSelection:
-        return MaterialPageRoute(
-          builder: (_) => const BikeSelectionScreen(),
-        );
-
-      case AppRoutes.dashboard:
-        return MaterialPageRoute(
-          builder: (_) => const BikeCheckWrapper(
-            dashboard: RootLayoutScreen(),
-          ),
-        );
-
-      case AppRoutes.bikeSettings:
-        return MaterialPageRoute(
-          builder: (_) => const BikeSettingsScreen(),
-        );
-
-      case AppRoutes.calendar:
-        return MaterialPageRoute(
-          builder: (_) => const CalendarScreen(),
-        );
-
-      case AppRoutes.mileageTracker:
-        return MaterialPageRoute(
-          builder: (_) => const MileageTrackerScreen(),
-        );
-
-      default:
-        return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: Center(
-              child: Text('No route defined for ${settings.name}'),
-            ),
-          ),
-        );
-    }
-  }
+  static final router = GoRouter(
+    initialLocation: AppRoutes.root,
+    routes: [
+      GoRoute(
+        path: AppRoutes.root,
+        name: 'root',
+        builder: (context, state) => const AuthWrapper(),
+      ),
+      GoRoute(
+        path: AppRoutes.login,
+        name: 'login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.bikeSelection,
+        name: 'bike-selection',
+        builder: (context, state) => const BikeSelectionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.dashboard,
+        name: 'home',
+        builder: (context, state) => const BikeCheckWrapper(
+          dashboard: RootLayoutScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.bikeSettings,
+        name: 'bike-settings',
+        builder: (context, state) => const BikeSettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.calendar,
+        name: 'calendar',
+        builder: (context, state) => const CalendarScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.mileageTracker,
+        name: 'mileage-tracker',
+        builder: (context, state) => const MileageTrackerScreen(),
+      ),
+    ],
+  );
 }

@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -47,7 +48,7 @@ class HomeHeader extends StatelessWidget {
           Row(
             children: [
               GestureDetector(
-                onTap: () => Navigator.pushNamed(context, AppRoutes.calendar),
+                onTap: () => context.push(AppRoutes.calendar),
                 child: Container(
                   width: 40,
                   height: 40,

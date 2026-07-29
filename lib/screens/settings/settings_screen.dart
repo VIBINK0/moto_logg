@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -85,7 +86,7 @@ class SettingsScreen extends StatelessWidget {
 
              GestureDetector(
                onTap: (){
-                 Navigator.pushNamed(context, AppRoutes.bikeSettings);
+                 context.push(AppRoutes.bikeSettings);
                },
                child: SettingsTile(
                 icon: Icons.directions_bike_rounded,
@@ -94,7 +95,7 @@ class SettingsScreen extends StatelessWidget {
                ),
              ),
             GestureDetector(
-              onTap: () => Navigator.pushNamed(context, AppRoutes.mileageTracker),
+              onTap: () => context.push(AppRoutes.mileageTracker),
               child: const SettingsTile(
                 icon: Icons.speed_rounded,
                 title: 'Mileage Tracker',

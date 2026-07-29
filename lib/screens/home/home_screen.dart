@@ -31,6 +31,7 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const HomeHeader(),
+                    const SizedBox(height: 16),
                     TotalExpenseCard(grand: grand),
                     const SizedBox(height: 16),
                     BikeSection(totals: totals),

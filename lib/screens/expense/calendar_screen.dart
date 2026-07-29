@@ -36,8 +36,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         backgroundColor: AppColors.bg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textPrimary, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -63,8 +66,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
           final allExpenses = snapshot.data ?? [];
           final expensesByDay = _groupExpensesByDay(allExpenses);
-          
-          final selectedExpenses = allExpenses.where((e) => isSameDay(e.date, _selectedDay)).toList();
+
+          final selectedExpenses = allExpenses
+              .where((e) => isSameDay(e.date, _selectedDay))
+              .toList();
 
           return Column(
             children: [
@@ -83,9 +88,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                 ),
               const SizedBox(height: 12),
-              Expanded(
-                child: _buildExpenseList(selectedExpenses),
-              ),
+              Expanded(child: _buildExpenseList(selectedExpenses)),
             ],
           );
         },
@@ -109,14 +112,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
         selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
         onDaySelected: (selectedDay, focusedDay) {
           setState(() {
-            _selectedDay =
-                DateTime.utc(selectedDay.year, selectedDay.month, selectedDay.day);
+            _selectedDay = DateTime.utc(
+              selectedDay.year,
+              selectedDay.month,
+              selectedDay.day,
+            );
             _focusedDay = focusedDay;
           });
         },
         calendarStyle: const CalendarStyle(
           outsideDaysVisible: false,
-          markerSize: 0
+          markerSize: 0,
           // Custom builders will override these
         ),
         headerStyle: const HeaderStyle(
@@ -127,10 +133,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
-          leftChevronIcon:
-              Icon(Icons.chevron_left, color: AppColors.textSecondary),
-          rightChevronIcon:
-              Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          leftChevronIcon: Icon(
+            Icons.chevron_left,
+            color: AppColors.textSecondary,
+          ),
+          rightChevronIcon: Icon(
+            Icons.chevron_right,
+            color: AppColors.textSecondary,
+          ),
         ),
         eventLoader: (day) {
           final normalizedDay = DateTime.utc(day.year, day.month, day.day);
@@ -138,16 +148,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
         },
         calendarBuilders: CalendarBuilders(
           defaultBuilder: (context, day, focusedDay) {
-            return _buildCalendarDay(day,
-                isSelected: false, isToday: false, expenses: expensesByDay);
+            return _buildCalendarDay(
+              day,
+              isSelected: false,
+              isToday: false,
+              expenses: expensesByDay,
+            );
           },
           selectedBuilder: (context, day, focusedDay) {
-            return _buildCalendarDay(day,
-                isSelected: true, isToday: false, expenses: expensesByDay);
+            return _buildCalendarDay(
+              day,
+              isSelected: true,
+              isToday: false,
+              expenses: expensesByDay,
+            );
           },
           todayBuilder: (context, day, focusedDay) {
-            return _buildCalendarDay(day,
-                isSelected: false, isToday: true, expenses: expensesByDay);
+            return _buildCalendarDay(
+              day,
+              isSelected: false,
+              isToday: true,
+              expenses: expensesByDay,
+            );
           },
           outsideBuilder: (context, day, focusedDay) {
             return const SizedBox.shrink(); // Hide outside days for a cleaner look
@@ -157,10 +179,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildCalendarDay(DateTime day,
-      {required bool isSelected,
-      required bool isToday,
-      required Map<DateTime, List<Expense>> expenses}) {
+  Widget _buildCalendarDay(
+    DateTime day, {
+    required bool isSelected,
+    required bool isToday,
+    required Map<DateTime, List<Expense>> expenses,
+  }) {
     final utcDay = DateTime.utc(day.year, day.month, day.day);
     final dayExpenses = expenses[utcDay] ?? [];
     final total = dayExpenses.fold<double>(0, (sum, e) => sum + e.amount);
@@ -172,18 +196,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
         color: isSelected
             ? AppColors.textPrimary
             : total > 0
-                ? AppColors.textPrimary.withValues(alpha: 0.3)
-                : isToday
-                    ? AppColors.iconBg
-                    : Colors.transparent,
+            ? AppColors.textPrimary.withValues(alpha: 0.3)
+            : isToday
+            ? AppColors.iconBg
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: isSelected
             ? null
             : Border.all(
                 color: total > 0
-                    ? AppColors.textPrimary.withOpacity(0.2)
+                    ? AppColors.textPrimary.withValues(alpha: 0.2)
                     : AppColors.border,
-                width: 0.5),
+                width: 0.5,
+              ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -192,22 +217,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
             '${day.day}',
             style: TextStyle(
               color: isSelected ? Colors.black : AppColors.textPrimary,
-              fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
+              fontWeight: isSelected || isToday
+                  ? FontWeight.bold
+                  : FontWeight.normal,
               fontSize: 14,
             ),
           ),
           if (total > 0)
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                '₹${total.toInt()}',
-                style: TextStyle(
-                  color: isSelected ? Colors.black : AppColors.textSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Wrap(
+                children: dayExpenses
+                    .map(
+                      (e) => Icon(
+                        e.category.iconData,
+                        color: isSelected
+                            ? Colors.black
+                            : AppColors.textSecondary,
+                        size: 12,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              '₹${total.toInt()}',
+              style: TextStyle(
+                color: isSelected ? Colors.black : AppColors.textSecondary,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -241,7 +284,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
     for (var expense in expenses) {
       // Create UTC midnight keys to match calendar selection
       final date = DateTime.utc(
-          expense.date.year, expense.date.month, expense.date.day);
+        expense.date.year,
+        expense.date.month,
+        expense.date.day,
+      );
       if (data[date] == null) {
         data[date] = [];
       }

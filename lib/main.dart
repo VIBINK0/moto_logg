@@ -1,9 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
 import 'core/routes/app_router.dart';
-import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'providers/bike_provider.dart';
@@ -12,6 +12,7 @@ import 'providers/mileage_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -39,12 +40,11 @@ class MotoLedgerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'MOTO LOGG',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute: AppRoutes.root,
+      routerConfig: AppRouter.router,
     );
   }
 }

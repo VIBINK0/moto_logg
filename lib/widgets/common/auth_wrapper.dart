@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -24,22 +25,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
       _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
         if (!mounted) return;
         if (user == null) {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.login,
-            (route) => false,
-          );
+          context.go(AppRoutes.login);
         } else {
           // Initialize bike provider for the new user
           context.read<BikeProvider>().initialize(user.uid);
-          // Don't navigate here, let AuthWrapper build the child or 
-          // allow LoginScreen to handle its own navigation.
-          // Or if you want to keep navigation here:
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.dashboard,
-            (route) => false,
-          );
+          context.go(AppRoutes.dashboard);
         }
       });
     });

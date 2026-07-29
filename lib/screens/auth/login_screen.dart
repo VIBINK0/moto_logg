@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -99,11 +100,7 @@ class _LoginScreenState extends State<LoginScreen>
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
           context.read<BikeProvider>().initialize(user.uid);
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.dashboard,
-            (route) => false,
-          );
+          context.go(AppRoutes.dashboard);
         } else {
           setState(() => _loading = false);
         }

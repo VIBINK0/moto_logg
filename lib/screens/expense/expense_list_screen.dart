@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -31,7 +32,7 @@ class ExpenseListScreen extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.calendar),
+                  onPressed: () => context.push(AppRoutes.calendar),
                   icon: const Icon(
                     Icons.calendar_month_rounded,
                     color: AppColors.textPrimary,
