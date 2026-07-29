@@ -32,6 +32,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
         } else {
           // Initialize bike provider for the new user
           context.read<BikeProvider>().initialize(user.uid);
+          // Don't navigate here, let AuthWrapper build the child or 
+          // allow LoginScreen to handle its own navigation.
+          // Or if you want to keep navigation here:
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.dashboard,

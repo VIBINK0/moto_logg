@@ -91,24 +91,38 @@ class _BikeSelectionScreenState extends State<BikeSelectionScreen>
       backgroundColor: Colors.black,
       body: IndustrialBackground(
         child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              _buildHeader(),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      children: [
+                        // Header
+                        _buildHeader(),
 
-              // Carousel
-              Expanded(child: _buildCarousel()),
+                        // Carousel
+                        _buildCarousel(),
 
-              // Pagination indicators
-              _buildPaginationIndicators(),
+                        const Spacer(),
 
-              const SizedBox(height: 24),
+                        // Pagination indicators
+                        _buildPaginationIndicators(),
 
-              // Select button
-              _buildSelectButton(),
+                        const SizedBox(height: 24),
 
-              const SizedBox(height: 40),
-            ],
+                        // Select button
+                        _buildSelectButton(),
+
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

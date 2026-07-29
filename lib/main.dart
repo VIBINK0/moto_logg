@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'providers/bike_provider.dart';
 import 'providers/expense_provider.dart';
+import 'providers/mileage_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => BikeProvider()),
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+        ChangeNotifierProvider(create: (_) => MileageProvider()),
       ],
       child: const MotoLedgerApp(),
     ),

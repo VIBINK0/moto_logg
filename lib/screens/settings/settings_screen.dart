@@ -17,7 +17,8 @@ class SettingsScreen extends StatelessWidget {
     final bikeProvider = context.watch<BikeProvider>();
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,15 +93,63 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: '${bikeProvider.selectedBike?.brandName} ${bikeProvider.selectedBike?.name}',
                ),
              ),
+            GestureDetector(
+              onTap: () => Navigator.pushNamed(context, AppRoutes.mileageTracker),
+              child: const SettingsTile(
+                icon: Icons.speed_rounded,
+                title: 'Mileage Tracker',
+                subtitle: 'Compare fuel records & calculate efficiency',
+              ),
+            ),
             const SettingsTile(
               icon: Icons.notifications_rounded,
               title: 'Notifications',
               subtitle: 'Enabled',
             ),
-            const SettingsTile(
-              icon: Icons.delete_sweep_rounded,
-              title: 'Clear All Data',
-              subtitle: 'Permanently remove all expenses',
+            GestureDetector(
+              onTap: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: AppColors.cardBg,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(color: AppColors.border),
+                    ),
+                    title: const Text("Total Wipeout?", style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                    content: const Text(
+                      "This will delete ALL expenses. Even the ones you're proud of. Are you absolutely sure you want to go back to financial zero?",
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("NEVERMIND", style: TextStyle(color: AppColors.textDim)),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text("GO NUKULAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  // TODO: Implement clear all data logic in provider
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Everything has been vaporized! 💨',style: TextStyle(color: Colors.white),),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: AppColors.cardBg,
+                    ),
+                  );
+                }
+              },
+              child: const SettingsTile(
+                icon: Icons.delete_sweep_rounded,
+                title: 'Clear All Data',
+                subtitle: 'Permanently remove all expenses',
+              ),
             ),
             const SettingsTile(
               icon: Icons.info_outline_rounded,

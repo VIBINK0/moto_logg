@@ -155,7 +155,7 @@ class BikeSettingsScreen extends StatelessWidget {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Switched to ${bike.name}'),
+                  content: Text('Switched to ${bike.name}',style: TextStyle(color: Colors.white)),
                   backgroundColor: Colors.grey.shade900,
                   behavior: SnackBarBehavior.floating,
                 ),

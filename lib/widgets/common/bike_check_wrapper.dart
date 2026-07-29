@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -24,7 +25,9 @@ class BikeCheckWrapper extends StatelessWidget {
           );
         }
 
-        if (!provider.hasBikeSelected) {
+        final user = FirebaseAuth.instance.currentUser;
+
+        if (!provider.hasBikeSelected && user != null) {
           // Use postFrameCallback for navigation during build
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Navigator.pushReplacementNamed(context, AppRoutes.bikeSelection);

@@ -25,14 +25,18 @@ class HomeScreen extends StatelessWidget {
           child: Container(
             constraints: const BoxConstraints(maxWidth: 500),
             child: SafeArea(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const HomeHeader(),
-                  TotalExpenseCard(grand: grand),
-                  BikeSection(totals: totals),
-                ],
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const HomeHeader(),
+                    TotalExpenseCard(grand: grand),
+                    const SizedBox(height: 16),
+                    BikeSection(totals: totals),
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),

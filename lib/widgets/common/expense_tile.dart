@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/formatters.dart';
@@ -9,40 +9,66 @@ class ExpenseTile extends StatelessWidget {
   final VoidCallback onDelete;
   const ExpenseTile({super.key, required this.expense, required this.onDelete});
 
+  Future<bool?> _showFunnyConfirmDialog(BuildContext context) async {
+    final funnyMessages = [
+      "Wait! This money could have bought a burger. Delete anyway?",
+      "Are you sure? This expense was proof you actually go outside.",
+      "Deleting this won't put the money back in your wallet. Sadly.",
+      "Warning: Deleting this might make you feel richer than you are.",
+      "Destroy the evidence of this financial mistake?",
+      "Once deleted, it exists only in your memories (and bank statement).",
+    ];
+    final message = funnyMessages[Random().nextInt(funnyMessages.length)];
+
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: AppColors.border),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 28),
+            SizedBox(width: 12),
+            Text("Wait a sec!", style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("SAVE IT", style: TextStyle(color: AppColors.textDim)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("DESTROY", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dismissible(
       key: Key(expense.id),
       direction: DismissDirection.endToStart,
-      confirmDismiss: (direction) async {
-        final completer = Completer<bool>();
-
+      confirmDismiss: (direction) => _showFunnyConfirmDialog(context),
+      onDismissed: (_) {
+        onDelete();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
+            content: Text('Financial evidence destroyed! 🕵️‍♂️'),
             behavior: SnackBarBehavior.floating,
-            padding: const EdgeInsets.all(5),
-            content: const Text(
-              'Interesting choice. Want to rethink it? 👀',
-            ),
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Chaos Mode',
-              onPressed: () {
-                if (!completer.isCompleted) {
-                  completer.complete(true);
-                }
-              },
-            ),
+            backgroundColor: AppColors.cardBg,
           ),
-        ).closed.then((_) {
-          if (!completer.isCompleted) {
-            completer.complete(false);
-          }
-        });
-
-        return completer.future;
+        );
       },
-      onDismissed: (_) => onDelete(),
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),

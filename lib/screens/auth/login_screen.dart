@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../../core/routes/app_routes.dart';
+import '../../providers/bike_provider.dart';
 import '../../core/constants/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -90,6 +93,20 @@ class _LoginScreenState extends State<LoginScreen>
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: email, password: password,
         );
+      }
+      
+      if (mounted) {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          context.read<BikeProvider>().initialize(user.uid);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.dashboard,
+            (route) => false,
+          );
+        } else {
+          setState(() => _loading = false);
+        }
       }
     } on FirebaseAuthException catch (e) {
       _setError(_friendlyError(e.code));
