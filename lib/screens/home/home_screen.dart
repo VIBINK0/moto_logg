@@ -1,48 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../models/expense_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/expense_provider.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/total_expense_card.dart';
 import '../../widgets/home/bike_section.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<ExpenseProvider>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final expensesAsync = ref.watch(expensesStreamProvider);
 
-    return StreamBuilder<List<Expense>>(
-      stream: provider.allExpenses,
-      builder: (ctx, snap) {
-        final all = snap.data ?? [];
-        final filtered = provider.applyFilter(all);
-        final totals = provider.totals(filtered);
-        final grand = provider.grand(filtered);
+    return Scaffold(
+      body: SafeArea(
+        child: expensesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Error: $err')),
+          data: (allExpenses) {
+            final totals = ref.watch(expenseTotalsProvider);
+            final grandTotal = ref.watch(grandTotalProvider);
 
-        return Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const HomeHeader(),
-                    const SizedBox(height: 16),
-                    TotalExpenseCard(grand: grand),
-                    const SizedBox(height: 16),
-                    BikeSection(totals: totals),
-                    const SizedBox(height: 24),
-                  ],
-                ),
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const HomeHeader(),
+                  const SizedBox(height: 24),
+                  TotalExpenseCard(grand: grandTotal),
+                  const SizedBox(height: 8),
+                  BikeSection(totals: totals)
+                      .animate()
+                      .fadeIn(delay: 400.ms, duration: 600.ms)
+                      .slideY(begin: 0.05),
+                ],
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 }

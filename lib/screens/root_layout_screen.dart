@@ -1,8 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../core/constants/app_colors.dart';
-import '../providers/expense_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/navigation_provider.dart';
 import '../widgets/common/app_bottom_nav.dart';
 import '../widgets/sheets/add_expense_sheet.dart';
 import 'home/home_screen.dart';
@@ -10,28 +9,27 @@ import 'expense/expense_list_screen.dart';
 import 'reports/reports_screen.dart';
 import 'settings/settings_screen.dart';
 
-class RootLayoutScreen extends StatelessWidget {
+class RootLayoutScreen extends ConsumerWidget {
   const RootLayoutScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<ExpenseProvider>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final navState = ref.watch(navigationProvider);
+    
     const pages = [
       HomeScreen(),
       ExpenseListScreen(),
       ReportsScreen(),
       SettingsScreen(),
     ];
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddSheet(context),
-        backgroundColor: AppColors.textPrimary,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.black, size: 28),
+        child: const Icon(Icons.add, size: 28),
       ),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.miniCenterDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.miniCenterDocked,
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 500),
@@ -45,17 +43,15 @@ class RootLayoutScreen extends StatelessWidget {
               },
             ),
             onPageChanged: (index) {
-              context.read<ExpenseProvider>().updateTabIndex(index);
+              ref.read(navigationProvider.notifier).updateIndex(index);
             },
             itemCount: pages.length,
-            controller: provider.pageController,
-            itemBuilder: (_, index) {
-              return pages[index];
-            },
+            controller: navState.pageController,
+            itemBuilder: (_, index) => pages[index],
           ),
         ),
       ),
-      bottomNavigationBar: AppBottomNav(current: provider.tabIndex),
+      bottomNavigationBar: AppBottomNav(current: navState.currentIndex),
     );
   }
 
@@ -63,14 +59,7 @@ class RootLayoutScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.cardBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => ChangeNotifierProvider.value(
-        value: context.read<ExpenseProvider>(),
-        child: const AddExpenseSheet(),
-      ),
+      builder: (_) => const AddExpenseSheet(),
     );
   }
 }

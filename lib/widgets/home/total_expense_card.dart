@@ -1,114 +1,125 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../core/constants/app_colors.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/expense_provider.dart';
 import '../sheets/filter_sheet.dart';
 
-class TotalExpenseCard extends StatelessWidget {
+class TotalExpenseCard extends ConsumerWidget {
   final double grand;
   const TotalExpenseCard({super.key, required this.grand});
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<ExpenseProvider>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final filter = ref.watch(expenseFilterProvider);
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: AppColors.cardBg,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.border, width: 0.8),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.iconBg,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet_rounded,
-                color: AppColors.textPrimary,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Total Expenses',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '₹${formatCurrency(grand)}',
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // ── Filter pill ──────────────────────────────
-            GestureDetector(
-              onTap: () => _showFilterSheet(context, provider),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.iconBg,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border, width: 0.8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      provider.filterLabel,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textSecondary,
-                      size: 16,
-                    ),
-                  ],
-                ),
-              ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.primary.withOpacity(0.8),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
-      ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Investment',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.7),
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '₹${formatCurrency(grand)}',
+                      style: theme.textTheme.displayLarge?.copyWith(
+                        color: theme.colorScheme.onPrimary,
+                        fontSize: 36,
+                        height: 1,
+                      ),
+                    ).animate(key: ValueKey(grand)).fadeIn().slideX(begin: -0.1),
+                  ],
+                ),
+                _FilterPill(
+                  label: filter.filterLabel,
+                  onTap: () => _showFilterSheet(context),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 800.ms, delay: 200.ms).scale(begin: const Offset(0.9, 0.9)),
     );
   }
 
-  void _showFilterSheet(BuildContext context, ExpenseProvider provider) {
+  void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.cardBg,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => ChangeNotifierProvider.value(
-        value: provider,
-        child: const FilterSheet(),
+      builder: (_) => const FilterSheet(),
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _FilterPill({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.onPrimary.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: theme.colorScheme.onPrimary.withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: theme.colorScheme.onPrimary,
+              size: 16,
+            ),
+          ],
+        ),
       ),
     );
   }

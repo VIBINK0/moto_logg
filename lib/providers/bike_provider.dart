@@ -1,64 +1,62 @@
-// lib/providers/bike_provider.dart
-
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/bike_model.dart';
 import '../services/bike_storage_service.dart';
 
-class BikeProvider with ChangeNotifier {
-  BikeModel? _selectedBike;
-  bool _isLoading = true;
-  String? _currentUserId;
+class BikeState {
+  final BikeModel? selectedBike;
+  final bool isLoading;
+  final String? currentUserId;
 
-  BikeModel? get selectedBike => _selectedBike;
-  bool get isLoading => _isLoading;
-  bool get hasBikeSelected => _selectedBike != null;
+  BikeState({
+    this.selectedBike,
+    this.isLoading = true,
+    this.currentUserId,
+  });
 
-  /// Initialize provider with user ID
+  BikeState copyWith({
+    BikeModel? selectedBike,
+    bool? isLoading,
+    String? currentUserId,
+    bool clearBike = false,
+  }) {
+    return BikeState(
+      selectedBike: clearBike ? null : (selectedBike ?? this.selectedBike),
+      isLoading: isLoading ?? this.isLoading,
+      currentUserId: currentUserId ?? this.currentUserId,
+    );
+  }
+}
+
+class BikeNotifier extends Notifier<BikeState> {
+  @override
+  BikeState build() => BikeState();
+
   Future<void> initialize(String userId) async {
-    _currentUserId = userId;
-    _isLoading = true;
-    notifyListeners();
-
-    _selectedBike = await BikeStorageService.getSelectedBike(userId);
-    _isLoading = false;
-    notifyListeners();
+    state = state.copyWith(currentUserId: userId, isLoading: true);
+    final bike = await BikeStorageService.getSelectedBike(userId);
+    state = state.copyWith(selectedBike: bike, isLoading: false);
   }
 
-  /// Select a bike
   Future<bool> selectBike(BikeModel bike) async {
-    if (_currentUserId == null) return false;
+    if (state.currentUserId == null) return false;
 
     final success = await BikeStorageService.saveSelectedBike(
-      userId: _currentUserId!,
+      userId: state.currentUserId!,
       bike: bike,
     );
 
     if (success) {
-      _selectedBike = bike;
-      notifyListeners();
+      state = state.copyWith(selectedBike: bike);
     }
     return success;
   }
 
-
-
-  /// Clear selection on logout
-  Future<void> clearSelectedBike() async {
-    if (_currentUserId != null) {
-      await BikeStorageService.clearSelectedBike(_currentUserId!);
-    }
-    _selectedBike = null;
-    notifyListeners();
-  }
-
-
-  /// Clear selection on logout
   Future<void> clearOnLogout() async {
-    if (_currentUserId != null) {
-      await BikeStorageService.clearSelectedBike(_currentUserId!);
+    if (state.currentUserId != null) {
+      await BikeStorageService.clearSelectedBike(state.currentUserId!);
     }
-    _selectedBike = null;
-    _currentUserId = null;
-    notifyListeners();
+    state = BikeState(isLoading: false);
   }
 }
+
+final bikeProvider = NotifierProvider<BikeNotifier, BikeState>(BikeNotifier.new);

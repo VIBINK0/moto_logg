@@ -1,130 +1,106 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../core/constants/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/expense_model.dart';
 import '../../providers/expense_provider.dart';
 import '../../widgets/common/expense_tile.dart';
 
-class ExpenseListScreen extends StatelessWidget {
+class ExpenseListScreen extends ConsumerWidget {
   const ExpenseListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.read<ExpenseProvider>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final expensesAsync = ref.watch(expensesStreamProvider);
+
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'All Expenses',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.displayLarge?.copyWith(fontSize: 28),
                 ),
                 IconButton(
                   onPressed: () => context.push(AppRoutes.calendar),
-                  icon: const Icon(
-                    Icons.calendar_month_rounded,
-                    color: AppColors.textPrimary,
-                    size: 26,
-                  ),
+                  icon: const Icon(Icons.calendar_month_rounded, size: 26),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<Expense>>(
-              stream: provider.allExpenses,
-              builder: (ctx, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.5,
-                      color: AppColors.textDim,
-                    ),
-                  );
-                }
-                if (snap.hasError) {
+            child: expensesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('Error: $err')),
+              data: (list) {
+                if (list.isEmpty) {
                   return Center(
                     child: Text(
-                      'Error: ${snap.error}',
-                      style: const TextStyle(color: AppColors.textDim, fontSize: 12),
-                    ),
-                  );
-                }
-                final list = snap.data ?? [];
-                if (list.isEmpty) {
-                  return const Center(
-                    child: Text(
                       'No expenses yet.',
-                      style: TextStyle(color: AppColors.textDim, fontSize: 13),
+                      style: theme.textTheme.bodyMedium,
                     ),
                   );
                 }
 
                 final grouped = <String, List<Expense>>{};
                 for (final e in list) {
-                  final k =
-                      '${e.date.year}-${e.date.month.toString().padLeft(2, '0')}';
+                  final k = '${e.date.year}-${e.date.month.toString().padLeft(2, '0')}';
                   grouped.putIfAbsent(k, () => []).add(e);
                 }
-                final keys = grouped.keys.toList()
-                  ..sort((a, b) => b.compareTo(a));
+                final keys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+                
                 const months = [
                   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
                 ];
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   itemCount: keys.length,
                   itemBuilder: (_, i) {
                     final k = keys[i];
                     final items = grouped[k]!;
                     final total = items.fold<double>(0, (s, e) => s + e.amount);
                     final parts = k.split('-');
-                    final label =
-                        '${months[int.parse(parts[1]) - 1]} ${parts[0]}';
+                    final label = '${months[int.parse(parts[1]) - 1]} ${parts[0]}';
+                    
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              label,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
+                              label.toUpperCase(),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
                               ),
                             ),
                             Text(
                               '₹${formatCurrency(total)}',
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         ...items.map(
                           (e) => ExpenseTile(
                             expense: e,
-                            onDelete: () => provider.delete(e.id),
+                            onDelete: () {
+                              ref.read(expenseServiceProvider)?.delete(e.id);
+                            },
                           ),
                         ),
                       ],

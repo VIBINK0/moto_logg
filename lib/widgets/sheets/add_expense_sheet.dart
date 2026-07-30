@@ -1,232 +1,214 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../core/constants/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/expense_model.dart';
 import '../../providers/expense_provider.dart';
+import '../common/primary_button.dart';
 
-class AddExpenseSheet extends StatefulWidget {
-  const AddExpenseSheet({super.key});
-  @override
-  State<AddExpenseSheet> createState() => _AddExpenseSheetState();
+// Form State for AddExpense
+class AddExpenseFormState {
+  final ExpenseCategory category;
+  final DateTime selectedDate;
+  final bool isLoading;
+  final String? errorMessage;
+
+  AddExpenseFormState({
+    required this.category,
+    required this.selectedDate,
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  AddExpenseFormState copyWith({
+    ExpenseCategory? category,
+    DateTime? selectedDate,
+    bool? isLoading,
+    String? errorMessage,
+  }) {
+    return AddExpenseFormState(
+      category: category ?? this.category,
+      selectedDate: selectedDate ?? this.selectedDate,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage,
+    );
+  }
 }
 
-class _AddExpenseSheetState extends State<AddExpenseSheet> {
-  ExpenseCategory _cat = ExpenseCategory.fuel;
-  final _amtCtrl = TextEditingController();
-  final _noteCtrl = TextEditingController();
-  DateTime _date = DateTime.now();
-  bool _loading = false;
-  String? _err;
-
+class AddExpenseFormNotifier extends AutoDisposeNotifier<AddExpenseFormState> {
   @override
-  void dispose() {
-    _amtCtrl.dispose();
-    _noteCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final d = await showDatePicker(
-      context: context,
-      initialDate: _date,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      builder: (c, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: AppColors.textPrimary,
-            onPrimary: Colors.black,
-            surface: AppColors.cardBg,
-          ),
-        ),
-        child: child!,
-      ),
-    );
-    if (d != null) setState(() => _date = d);
-  }
-
-  Future<void> _save() async {
-    final amt = double.tryParse(_amtCtrl.text.trim());
-    if (amt == null || amt <= 0) {
-      setState(() => _err = 'Enter a valid amount');
-      return;
-    }
-    setState(() {
-      _loading = true;
-      _err = null;
-    });
-    try {
-      await context.read<ExpenseProvider>().add(
-        category: _cat,
-        amount: amt,
-        date: _date,
-        notes: _noteCtrl.text.trim(),
+  AddExpenseFormState build() => AddExpenseFormState(
+        category: ExpenseCategory.fuel,
+        selectedDate: DateTime.now(),
       );
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      setState(() {
-        _err = 'Error: $e';
-        _loading = false;
-      });
-    }
-  }
+
+  void setCategory(ExpenseCategory category) => state = state.copyWith(category: category);
+  void setDate(DateTime date) => state = state.copyWith(selectedDate: date);
+  void setLoading(bool loading) => state = state.copyWith(isLoading: loading);
+  void setError(String? error) => state = state.copyWith(errorMessage: error);
+}
+
+final addExpenseFormProvider =
+    NotifierProvider.autoDispose<AddExpenseFormNotifier, AddExpenseFormState>(
+        AddExpenseFormNotifier.new);
+
+class AddExpenseSheet extends ConsumerWidget {
+  const AddExpenseSheet({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final inset = MediaQuery.of(context).viewInsets.bottom;
-    return SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(20, 0, 20, inset + 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 12),
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final formState = ref.watch(addExpenseFormProvider);
+    final formNotifier = ref.read(addExpenseFormProvider.notifier);
+
+    // We still use controllers for text input as it's standard and more efficient
+    // but the rest of the UI state is in Riverpod.
+    final amountController = ref.watch(_amountControllerProvider);
+    final noteController = ref.watch(_noteControllerProvider);
+
+    Future<void> save() async {
+      final amount = double.tryParse(amountController.text.trim());
+      if (amount == null || amount <= 0) {
+        formNotifier.setError('Enter a valid amount');
+        return;
+      }
+      formNotifier.setLoading(true);
+      formNotifier.setError(null);
+      
+      try {
+        final service = ref.read(expenseServiceProvider);
+        if (service != null) {
+          await service.add(Expense(
+            id: '',
+            category: formState.category,
+            amount: amount,
+            date: formState.selectedDate,
+            notes: noteController.text.trim(),
+          ));
+          if (context.mounted) Navigator.pop(context);
+        }
+      } catch (e) {
+        formNotifier.setError('Error saving expense');
+        formNotifier.setLoading(false);
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(24, 12, 24, bottomInset + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 48,
+              height: 5,
+              decoration: BoxDecoration(
+                color: theme.dividerColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(2.5),
               ),
             ),
-          const SizedBox(height: 20),
-          const Text(
-            'Add Expense',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'New Expense',
+            style: theme.textTheme.displayLarge?.copyWith(fontSize: 24),
+          ),
+          const SizedBox(height: 24),
+          
+          _Label('CATEGORY'),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: ExpenseCategory.values.map((c) {
+                final isSelected = c == formState.category;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(c.label),
+                    selected: isSelected,
+                    onSelected: (val) => formNotifier.setCategory(c),
+                    avatar: Icon(
+                      c.iconData, 
+                      size: 16, 
+                      color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
-          const SizedBox(height: 20),
-          const _SheetLabel('CATEGORY'),
+          
+          const SizedBox(height: 24),
+          _Label('AMOUNT (₹)'),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: ExpenseCategory.values.map((c) {
-              final sel = c == _cat;
-              return GestureDetector(
-                onTap: () => setState(() => _cat = c),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 9,
-                  ),
-                  decoration: BoxDecoration(
-                    color: sel ? AppColors.textPrimary : AppColors.iconBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: sel ? AppColors.textPrimary : AppColors.border),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        c.iconData,
-                        size: 14,
-                        color: sel ? Colors.black : AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        c.label,
-                        style: TextStyle(
-                          color: sel ? Colors.black : AppColors.textSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 18),
-          const _SheetLabel('AMOUNT (₹)'),
-          const SizedBox(height: 8),
-          _SheetField(
-            controller: _amtCtrl,
-            hint: '0',
+          TextField(
+            controller: amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            decoration: const InputDecoration(
+              hintText: '0.00',
+              prefixText: '₹ ',
+            ),
           ),
-          const SizedBox(height: 14),
-          const _SheetLabel('DATE'),
+          
+          const SizedBox(height: 20),
+          _Label('DATE'),
           const SizedBox(height: 8),
-          GestureDetector(
-            onTap: _pickDate,
+          InkWell(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: formState.selectedDate,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+              );
+              if (picked != null) formNotifier.setDate(picked);
+            },
+            borderRadius: BorderRadius.circular(16),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.iconBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.calendar_today_rounded,
-                    color: AppColors.textSecondary,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 10),
+                  Icon(Icons.calendar_month_outlined, size: 20, color: theme.colorScheme.primary),
+                  const SizedBox(width: 12),
                   Text(
-                    '${_date.day.toString().padLeft(2, '0')} / '
-                    '${_date.month.toString().padLeft(2, '0')} / '
-                    '${_date.year}',
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    '${formState.selectedDate.day}/${formState.selectedDate.month}/${formState.selectedDate.year}',
+                    style: theme.textTheme.bodyLarge,
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 14),
-          const _SheetLabel('NOTES (OPTIONAL)'),
+          
+          const SizedBox(height: 20),
+          _Label('NOTES'),
           const SizedBox(height: 8),
-          _SheetField(
-            controller: _noteCtrl,
-            hint: 'e.g. Petrol at HP station',
+          TextField(
+            controller: noteController,
             maxLines: 2,
+            decoration: const InputDecoration(
+              hintText: 'What was this for?',
+            ),
           ),
-          if (_err != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _err!,
-              style: const TextStyle(color: Color(0xFF888888), fontSize: 12),
-            ),
-          ],
-          const SizedBox(height: 24),
-          GestureDetector(
-            onTap: _loading ? null : _save,
-            child: Container(
-              width: double.infinity,
-              height: 54,
-              decoration: BoxDecoration(
-                color: AppColors.textPrimary,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: _loading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.black,
-                        ),
-                      )
-                    : const Text(
-                        'Save Expense',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-              ),
-            ),
+          
+          const SizedBox(height: 32),
+          if (formState.errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text(formState.errorMessage!, style: TextStyle(color: theme.colorScheme.error)),
+            ).animate().shake(),
+
+          PrimaryButton(
+            label: 'Add Expense',
+            isLoading: formState.isLoading,
+            onPressed: save,
           ),
         ],
       ),
@@ -234,62 +216,22 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
   }
 }
 
-class _SheetLabel extends StatelessWidget {
+// Internal providers for controllers to keep the UI clean
+final _amountControllerProvider = Provider.autoDispose((ref) => TextEditingController());
+final _noteControllerProvider = Provider.autoDispose((ref) => TextEditingController());
+
+class _Label extends StatelessWidget {
   final String text;
-  const _SheetLabel(this.text);
-  @override
-  Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(
-      color: AppColors.textDim,
-      fontSize: 10,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 1.5,
-    ),
-  );
-}
-
-class _SheetField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final TextInputType? keyboardType;
-  final int maxLines;
-
-  const _SheetField({
-    required this.controller,
-    required this.hint,
-    this.keyboardType,
-    this.maxLines = 1,
-  });
-
+  const _Label(this.text);
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textDim),
-        filled: true,
-        fillColor: AppColors.iconBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF555555), width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
-        ),
+    final theme = Theme.of(context);
+    return Text(
+      text,
+      style: theme.textTheme.labelSmall?.copyWith(
+        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5),
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
       ),
     );
   }

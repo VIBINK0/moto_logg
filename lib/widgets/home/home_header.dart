@@ -1,87 +1,94 @@
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../core/constants/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
 
-class HomeHeader extends StatelessWidget {
+class HomeHeader extends ConsumerWidget {
   const HomeHeader({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final user = FirebaseAuth.instance.currentUser;
     final name = user?.email?.split('@').first ?? 'Rider';
-    final bikeProvider = context.watch<BikeProvider>();
+    final bikeState = ref.watch(bikeProvider);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Hello, $name ',
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Hey, $name',
+                      style: theme.textTheme.displayLarge?.copyWith(
+                        fontSize: 28,
+                      ),
                     ),
-                  ),
-                  const Text('😎', style: TextStyle(fontSize: 22)),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Track your ${bikeProvider.selectedBike?.name} expenses',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-            ],
+                    const SizedBox(width: 8),
+                    const Text('👋', style: TextStyle(fontSize: 24))
+                        .animate(onPlay: (controller) => controller.repeat())
+                        .shake(delay: 2.seconds, duration: 1.seconds),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Managing ${bikeState.selectedBike?.name ?? 'your bike'}',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ],
+            ),
           ),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => context.push(AppRoutes.calendar),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: const Icon(
-                    Icons.calendar_month_rounded,
-                    color: AppColors.textPrimary,
-                    size: 20,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: const Icon(
-                  Icons.notifications_outlined,
-                  color: AppColors.textPrimary,
-                  size: 20,
-                ),
-              ),
-            ],
+          _HeaderAction(
+            icon: Icons.calendar_today_outlined,
+            onTap: () => context.push(AppRoutes.calendar),
+          ),
+          const SizedBox(width: 12),
+          _HeaderAction(
+            icon: Icons.notifications_none_rounded,
+            onTap: () {},
           ),
         ],
+      ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.2),
+    );
+  }
+}
+
+class _HeaderAction extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _HeaderAction({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+            color: theme.colorScheme.surface,
+          ),
+          child: Icon(
+            icon,
+            color: theme.colorScheme.onSurface,
+            size: 20,
+          ),
+        ),
       ),
     );
   }

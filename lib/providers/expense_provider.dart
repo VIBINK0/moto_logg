@@ -1,119 +1,112 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/expense_model.dart';
 import '../services/firestore_service.dart';
 
-class ExpenseProvider extends ChangeNotifier {
-  FirestoreService get _svc =>
-      FirestoreService(uid: FirebaseAuth.instance.currentUser!.uid);
+class ExpenseFilterState {
+  final String mode; // 'All Time' | 'Month' | 'Year'
+  final int selectedMonth;
+  final int selectedYear;
 
-  // ── Tab ─────────────────────────────────────────────────
-  int _tabIndex = 0;
-  final PageController _pageController = PageController(initialPage: 0);
-  int get tabIndex => _tabIndex;
-  PageController get pageController => _pageController;
+  ExpenseFilterState({
+    required this.mode,
+    required this.selectedMonth,
+    required this.selectedYear,
+  });
 
-  void setTab(int i) {
-    if (_pageController.hasClients) {
-      _pageController.jumpToPage(i);
-    }
-    _tabIndex = i;
-    notifyListeners();
+  factory ExpenseFilterState.initial() => ExpenseFilterState(
+        mode: 'Month',
+        selectedMonth: DateTime.now().month,
+        selectedYear: DateTime.now().year,
+      );
+
+  ExpenseFilterState copyWith({
+    String? mode,
+    int? selectedMonth,
+    int? selectedYear,
+  }) {
+    return ExpenseFilterState(
+      mode: mode ?? this.mode,
+      selectedMonth: selectedMonth ?? this.selectedMonth,
+      selectedYear: selectedYear ?? this.selectedYear,
+    );
   }
 
-  void updateTabIndex(int i) {
-    _tabIndex = i;
-    notifyListeners();
-  }
-
-  // ── Filter mode ──────────────────────────────────────────
-  // 'All Time' | 'Month' | 'Year'
-  String _filterMode = 'Month';
-  String get filterMode => _filterMode;
-
-  int _selectedMonth = DateTime.now().month; // 1–12
-  int get selectedMonth => _selectedMonth;
-
-  int _selectedYear = DateTime.now().year;
-  int get selectedYear => _selectedYear;
-
-  void setFilterMode(String mode) {
-    _filterMode = mode;
-    notifyListeners();
-  }
-
-  void setSelectedMonth(int month) {
-    _selectedMonth = month;
-    _filterMode = 'Month';
-    notifyListeners();
-  }
-
-  void setSelectedYear(int year) {
-    _selectedYear = year;
-    if (_filterMode == 'All Time') {
-        _filterMode = 'Year';
-    }
-    notifyListeners();
-  }
-
-  /// Human-readable label shown on the dropdown button
   String get filterLabel {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
-    switch (_filterMode) {
+    switch (mode) {
       case 'Month':
-        return '${months[_selectedMonth - 1]} $_selectedYear';
+        return '${months[selectedMonth - 1]} $selectedYear';
       case 'Year':
-        return '$_selectedYear';
+        return '$selectedYear';
       default:
         return 'All Time';
     }
   }
-
-  // ── Stream ───────────────────────────────────────────────
-  Stream<List<Expense>> get allExpenses => _svc.stream();
-
-  // ── Apply filter ─────────────────────────────────────────
-  List<Expense> applyFilter(List<Expense> all) {
-    switch (_filterMode) {
-      case 'Month':
-        return all.where((e) =>
-        e.date.year == _selectedYear &&
-            e.date.month == _selectedMonth).toList();
-      case 'Year':
-        return all.where((e) => e.date.year == _selectedYear).toList();
-      default: // 'All Time'
-        return all;
-    }
-  }
-
-  // ── Aggregates ───────────────────────────────────────────
-  Map<ExpenseCategory, double> totals(List<Expense> list) {
-    final m = {for (var c in ExpenseCategory.values) c: 0.0};
-    for (final e in list) {
-      m[e.category] = (m[e.category] ?? 0) + e.amount;
-    }
-    return m;
-  }
-
-  double grand(List<Expense> list) => list.fold(0, (s, e) => s + e.amount);
-
-  // ── Mutations ────────────────────────────────────────────
-  Future<void> add({
-    required ExpenseCategory category,
-    required double amount,
-    required DateTime date,
-    String? notes,
-  }) =>
-      _svc.add(Expense(
-        id: '',
-        category: category,
-        amount: amount,
-        date: date,
-        notes: notes,
-      ));
-
-  Future<void> delete(String id) => _svc.delete(id);
 }
+
+class ExpenseFilterNotifier extends Notifier<ExpenseFilterState> {
+  @override
+  ExpenseFilterState build() => ExpenseFilterState.initial();
+
+  void setFilterMode(String mode) => state = state.copyWith(mode: mode);
+  
+  void setSelectedMonth(int month) => 
+      state = state.copyWith(selectedMonth: month, mode: 'Month');
+
+  void setSelectedYear(int year) {
+    if (state.mode == 'All Time') {
+      state = state.copyWith(selectedYear: year, mode: 'Year');
+    } else {
+      state = state.copyWith(selectedYear: year);
+    }
+  }
+}
+
+final expenseFilterProvider = NotifierProvider<ExpenseFilterNotifier, ExpenseFilterState>(
+  ExpenseFilterNotifier.new,
+);
+
+final expensesStreamProvider = StreamProvider<List<Expense>>((ref) {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return Stream.value([]);
+  return FirestoreService(uid: user.uid).stream();
+});
+
+final filteredExpensesProvider = Provider<List<Expense>>((ref) {
+  final allExpenses = ref.watch(expensesStreamProvider).value ?? [];
+  final filter = ref.watch(expenseFilterProvider);
+
+  switch (filter.mode) {
+    case 'Month':
+      return allExpenses
+          .where((e) => e.date.year == filter.selectedYear && e.date.month == filter.selectedMonth)
+          .toList();
+    case 'Year':
+      return allExpenses.where((e) => e.date.year == filter.selectedYear).toList();
+    default:
+      return allExpenses;
+  }
+});
+
+final expenseTotalsProvider = Provider<Map<ExpenseCategory, double>>((ref) {
+  final expenses = ref.watch(filteredExpensesProvider);
+  final m = {for (var c in ExpenseCategory.values) c: 0.0};
+  for (final e in expenses) {
+    m[e.category] = (m[e.category] ?? 0) + e.amount;
+  }
+  return m;
+});
+
+final grandTotalProvider = Provider<double>((ref) {
+  return ref.watch(filteredExpensesProvider).fold(0, (s, e) => s + e.amount);
+});
+
+// For mutations, we can use a class or just providers
+final expenseServiceProvider = Provider((ref) {
+  final user = FirebaseAuth.instance.currentUser;
+  return user != null ? FirestoreService(uid: user.uid) : null;
+});

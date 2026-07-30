@@ -1,5 +1,5 @@
 import 'package:go_router/go_router.dart';
-import '../../screens/auth/login_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../screens/bike/bike_selection_screen.dart';
 import '../../screens/bike/bike_settings_screen.dart';
 import '../../screens/expense/calendar_screen.dart';
