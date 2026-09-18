@@ -1,21 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
+import '../../core/utils/sms_permission_helper.dart';
 import '../../providers/bike_provider.dart';
-import '../../providers/expense_provider.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/common/settings_tile.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = FirebaseAuth.instance.currentUser;
-    final bikeProvider = context.watch<BikeProvider>();
+    final bikeState = ref.watch(bikeProvider);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -91,7 +91,7 @@ class SettingsScreen extends StatelessWidget {
                child: SettingsTile(
                 icon: Icons.directions_bike_rounded,
                 title: 'Change Bike',
-                subtitle: '${bikeProvider.selectedBike?.brandName} ${bikeProvider.selectedBike?.name}',
+                subtitle: '${bikeState.selectedBike?.brandName ?? ""} ${bikeState.selectedBike?.name ?? ""}'.trim().isEmpty ? 'No bike selected' : '${bikeState.selectedBike?.brandName} ${bikeState.selectedBike?.name}',
                ),
              ),
             GestureDetector(
@@ -100,6 +100,36 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.speed_rounded,
                 title: 'Mileage Tracker',
                 subtitle: 'Compare fuel records & calculate efficiency',
+              ),
+            ),
+            GestureDetector(
+              onTap: () async {
+                final status = await SmsPermissionHelper.checkPermissions();
+                if (!status.isFullyGranted) {
+                  final granted = await SmsPermissionHelper.requestPermissions();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(granted
+                            ? 'SMS automatic expense detection enabled!'
+                            : 'Permissions denied. Cannot auto-detect transactions.'),
+                      ),
+                    );
+                  }
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('SMS expense detection is active.'),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const SettingsTile(
+                icon: Icons.sms_rounded,
+                title: 'SMS Expense Detection',
+                subtitle: 'Auto-detect UPI & card bank debit alerts',
               ),
             ),
             const SettingsTile(
@@ -135,7 +165,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 );
 
-                if (confirm == true) {
+                if (confirm == true && context.mounted) {
                   // TODO: Implement clear all data logic in provider
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -163,7 +193,7 @@ class SettingsScreen extends StatelessWidget {
             // Sign Out button
             GestureDetector(
               onTap: () async {
-                AuthService.signOut(context);
+                AuthService.signOut(context, ref);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(

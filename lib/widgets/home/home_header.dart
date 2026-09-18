@@ -80,7 +80,7 @@ class _HeaderAction extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
             color: theme.colorScheme.surface,
           ),
           child: Icon(

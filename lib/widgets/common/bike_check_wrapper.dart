@@ -1,43 +1,40 @@
-import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
 
-class BikeCheckWrapper extends StatelessWidget {
+class BikeCheckWrapper extends ConsumerWidget {
   final Widget dashboard;
   const BikeCheckWrapper({super.key, required this.dashboard});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<BikeProvider>(
-      builder: (context, provider, _) {
-        if (provider.isLoading) {
-          return const Scaffold(
-            backgroundColor: AppColors.bg,
-            body: Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 1.5,
-                color: AppColors.textDim,
-              ),
-            ),
-          );
-        }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bikeState = ref.watch(bikeProvider);
 
-        final user = FirebaseAuth.instance.currentUser;
+    if (bikeState.isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.bg,
+        body: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 1.5,
+            color: AppColors.textDim,
+          ),
+        ),
+      );
+    }
 
-        if (!provider.hasBikeSelected && user != null) {
-          // Use postFrameCallback for navigation during build
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.go(AppRoutes.bikeSelection);
-          });
-          return const Scaffold(backgroundColor: AppColors.bg);
-        }
+    final user = FirebaseAuth.instance.currentUser;
 
-        return dashboard;
-      },
-    );
+    if (!bikeState.hasBikeSelected && user != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go(AppRoutes.bikeSelection);
+      });
+      return const Scaffold(backgroundColor: AppColors.bg);
+    }
+
+    return dashboard;
   }
 }

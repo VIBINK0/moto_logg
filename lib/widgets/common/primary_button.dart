@@ -48,7 +48,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
             boxShadow: [
               if (!isDisabled && !_isPressed)
                 BoxShadow(
-                  color: (widget.color ?? theme.colorScheme.primary).withOpacity(0.2),
+                  color: (widget.color ?? theme.colorScheme.primary).withValues(alpha: 0.2),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),

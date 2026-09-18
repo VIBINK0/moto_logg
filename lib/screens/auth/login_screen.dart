@@ -1,19 +1,19 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
 import '../../core/constants/app_colors.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
 
   // ── State ──────────────────────────────────────────────
@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) {
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
-          context.read<BikeProvider>().initialize(user.uid);
+          ref.read(bikeProvider.notifier).initialize(user.uid);
           context.go(AppRoutes.dashboard);
         } else {
           setState(() => _loading = false);

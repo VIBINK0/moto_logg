@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
@@ -7,17 +7,16 @@ import '../../models/expense_model.dart';
 import '../../providers/expense_provider.dart';
 import '../../widgets/common/expense_tile.dart';
 
-class CalendarScreen extends StatefulWidget {
+class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
   @override
-  State<CalendarScreen> createState() => _CalendarScreenState();
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  late Stream<List<Expense>> _expenseStream;
 
   @override
   void initState() {
@@ -25,11 +24,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final now = DateTime.now();
     _selectedDay = DateTime.utc(now.year, now.month, now.day);
     _focusedDay = now;
-    _expenseStream = context.read<ExpenseProvider>().allExpenses;
   }
 
   @override
   Widget build(BuildContext context) {
+    final expenseAsync = ref.watch(expensesStreamProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
@@ -52,19 +52,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ),
       ),
-      body: StreamBuilder<List<Expense>>(
-        stream: _expenseStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 1.5,
-                color: AppColors.textDim,
-              ),
-            );
-          }
-
-          final allExpenses = snapshot.data ?? [];
+      body: expenseAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 1.5,
+            color: AppColors.textDim,
+          ),
+        ),
+        error: (err, _) => Center(
+          child: Text(
+            'Error loading expenses',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+        data: (allExpenses) {
           final expensesByDay = _groupExpensesByDay(allExpenses);
 
           final selectedExpenses = allExpenses
@@ -273,7 +274,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final expense = expenses[index];
         return ExpenseTile(
           expense: expense,
-          onDelete: () => context.read<ExpenseProvider>().delete(expense.id),
+          onDelete: () => ref.read(expenseServiceProvider)?.delete(expense.id),
         );
       },
     );

@@ -16,8 +16,8 @@ class FuelWavePainter extends CustomPainter {
     final paint = Paint()
       ..shader = LinearGradient(
         colors: [
-          Colors.orangeAccent.withOpacity(0.9),
-          Colors.deepOrange.withOpacity(0.7),
+          Colors.orangeAccent.withValues(alpha: 0.9),
+          Colors.deepOrange.withValues(alpha: 0.7),
         ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
@@ -42,7 +42,7 @@ class FuelWavePainter extends CustomPainter {
 
     // SECOND WAVE (DEPTH)
     final paint2 = Paint()
-      ..color = Colors.orange.withOpacity(0.3);
+      ..color = Colors.orange.withValues(alpha: 0.3);
 
     final path2 = Path();
     path2.moveTo(0, size.height);
@@ -63,7 +63,7 @@ class FuelWavePainter extends CustomPainter {
 
     // SURFACE SHINE LINE
     final shinePaint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
+      ..color = Colors.white.withValues(alpha: 0.3)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 

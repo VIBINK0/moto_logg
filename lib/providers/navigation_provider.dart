@@ -18,7 +18,7 @@ class NavigationState {
   }
 }
 
-class NavigationNotifier extends AutoDisposeNotifier<NavigationState> {
+class NavigationNotifier extends Notifier<NavigationState> {
   @override
   NavigationState build() {
     final controller = PageController();
@@ -45,6 +45,6 @@ class NavigationNotifier extends AutoDisposeNotifier<NavigationState> {
   }
 }
 
-final navigationProvider = NotifierProvider.autoDispose<NavigationNotifier, NavigationState>(
+final navigationProvider = NotifierProvider<NavigationNotifier, NavigationState>(
   NavigationNotifier.new,
 );

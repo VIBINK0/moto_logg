@@ -118,7 +118,7 @@ class _IndustrialBackgroundState extends State<IndustrialBackground>
               radius: 1.5,
               colors: [
                 Colors.transparent,
-                Colors.black.withOpacity(0.7),
+                Colors.black.withValues(alpha: 0.7),
               ],
             ),
           ),
@@ -132,7 +132,7 @@ class _IndustrialBackgroundState extends State<IndustrialBackground>
               radius: 1.2,
               colors: [
                 Colors.transparent,
-                Colors.black.withOpacity(0.8),
+                Colors.black.withValues(alpha: 0.8),
               ],
             ),
           ),
@@ -176,7 +176,7 @@ class SparksPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (var spark in sparks) {
       final paint = Paint()
-        ..color = Colors.orange.withOpacity(spark.opacity.clamp(0, 1))
+        ..color = Colors.orange.withValues(alpha: spark.opacity.clamp(0, 1))
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, spark.size);
 
       canvas.drawCircle(
@@ -199,7 +199,7 @@ class GearsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.03)
+      ..color = Colors.white.withValues(alpha: 0.03)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
@@ -250,7 +250,7 @@ class MetallicTexturePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
+      ..color = Colors.white.withValues(alpha: 0.05)
       ..strokeWidth = 0.5;
 
     // Diagonal industrial lines

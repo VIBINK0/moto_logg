@@ -24,13 +24,13 @@ class TotalExpenseCard extends ConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               theme.colorScheme.primary,
-              theme.colorScheme.primary.withOpacity(0.8),
+              theme.colorScheme.primary.withValues(alpha: 0.8),
             ],
           ),
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.3),
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -47,7 +47,7 @@ class TotalExpenseCard extends ConsumerWidget {
                     Text(
                       'Total Investment',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.7),
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
                       ),
@@ -98,9 +98,9 @@ class _FilterPill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: theme.colorScheme.onPrimary.withOpacity(0.15),
+          color: theme.colorScheme.onPrimary.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: theme.colorScheme.onPrimary.withOpacity(0.1)),
+          border: Border.all(color: theme.colorScheme.onPrimary.withValues(alpha: 0.1)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

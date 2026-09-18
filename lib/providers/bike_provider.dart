@@ -13,6 +13,8 @@ class BikeState {
     this.currentUserId,
   });
 
+  bool get hasBikeSelected => selectedBike != null;
+
   BikeState copyWith({
     BikeModel? selectedBike,
     bool? isLoading,

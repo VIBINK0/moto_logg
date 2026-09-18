@@ -5,6 +5,8 @@ class AppColors {
   static const bg = Color(0xFF0A0A0A);
   static const surface = Color(0xFF141414);
   static const surfaceLight = Color(0xFF1E1E1E);
+  static const cardBg = surface;
+  static const iconBg = surfaceLight;
   static const accent = Color(0xFFE5FF00); // Neon Lime for "Premium" look
   
   static const textPrimary = Colors.white;

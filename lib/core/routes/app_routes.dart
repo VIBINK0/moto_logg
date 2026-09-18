@@ -6,4 +6,5 @@ class AppRoutes {
   static const String bikeSettings = '/settings/bike';
   static const String calendar = '/expenses/calendar';
   static const String mileageTracker = '/expenses/mileage';
+  static const String expenseConfirm = '/expenses/confirm';
 }

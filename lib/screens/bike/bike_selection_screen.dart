@@ -10,8 +10,21 @@ import '../../widgets/bike_carousel_item.dart';
 import '../../widgets/industrial_background.dart';
 
 // Selection State
-final _carouselIndexProvider = StateProvider.autoDispose<int>((ref) => 0);
-final _isSelectingProvider = StateProvider.autoDispose<bool>((ref) => false);
+class _CarouselIndexNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+  @override
+  set state(int val) => super.state = val;
+}
+final _carouselIndexProvider = NotifierProvider<_CarouselIndexNotifier, int>(_CarouselIndexNotifier.new);
+
+class _IsSelectingNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  @override
+  set state(bool val) => super.state = val;
+}
+final _isSelectingProvider = NotifierProvider<_IsSelectingNotifier, bool>(_IsSelectingNotifier.new);
 
 class BikeSelectionScreen extends ConsumerWidget {
   const BikeSelectionScreen({super.key});
@@ -74,7 +87,7 @@ class BikeSelectionScreen extends ConsumerWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w300,
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               letterSpacing: 8,
             ),
           ),
@@ -128,7 +141,7 @@ class BikeSelectionScreen extends ConsumerWidget {
           height: 8,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.3),
+            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
           ),
         );
       }),

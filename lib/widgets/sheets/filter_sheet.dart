@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/expense_provider.dart';
 
-class FilterSheet extends StatelessWidget {
+class FilterSheet extends ConsumerWidget {
   const FilterSheet({super.key});
 
   static const _months = [
@@ -12,8 +12,9 @@ class FilterSheet extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<ExpenseProvider>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(expenseFilterProvider);
+    final notifier = ref.read(expenseFilterProvider.notifier);
     final currentYear = DateTime.now().year;
     final years = List.generate(
       currentYear - 2020 + 1,
@@ -52,10 +53,10 @@ class FilterSheet extends StatelessWidget {
           // ── Mode selector row ─────────────────────────
           Row(
             children: ['All Time', 'Month', 'Year'].map((mode) {
-              final active = provider.filterMode == mode;
+              final active = filter.mode == mode;
               return GestureDetector(
                 onTap: () {
-                  provider.setFilterMode(mode);
+                  notifier.setFilterMode(mode);
                   if (mode == 'All Time') Navigator.pop(context);
                 },
                 child: AnimatedContainer(
@@ -84,7 +85,7 @@ class FilterSheet extends StatelessWidget {
           ),
 
           // ── Month chips ───────────────────────────────
-          if (provider.filterMode == 'Month') ...[
+          if (filter.mode == 'Month') ...[
             const SizedBox(height: 20),
             const Text(
               'Month',
@@ -101,10 +102,10 @@ class FilterSheet extends StatelessWidget {
               runSpacing: 8,
               children: List.generate(12, (i) {
                 final m = i + 1;
-                final sel = provider.selectedMonth == m;
+                final sel = filter.selectedMonth == m;
                 return GestureDetector(
                   onTap: () {
-                    provider.setSelectedMonth(m);
+                    notifier.setSelectedMonth(m);
                     Navigator.pop(context);
                   },
                   child: AnimatedContainer(
@@ -149,9 +150,9 @@ class FilterSheet extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: years.map((y) {
-                final sel = provider.selectedYear == y;
+                final sel = filter.selectedYear == y;
                 return GestureDetector(
-                  onTap: () => provider.setSelectedYear(y),
+                  onTap: () => notifier.setSelectedYear(y),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 140),
                     padding: const EdgeInsets.symmetric(
@@ -181,7 +182,7 @@ class FilterSheet extends StatelessWidget {
           ],
 
           // ── Year chips ────────────────────────────────
-          if (provider.filterMode == 'Year') ...[
+          if (filter.mode == 'Year') ...[
             const SizedBox(height: 20),
             const Text(
               'Year',
@@ -197,10 +198,10 @@ class FilterSheet extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: years.map((y) {
-                final sel = provider.selectedYear == y;
+                final sel = filter.selectedYear == y;
                 return GestureDetector(
                   onTap: () {
-                    provider.setSelectedYear(y);
+                    notifier.setSelectedYear(y);
                     Navigator.pop(context);
                   },
                   child: AnimatedContainer(
@@ -222,7 +223,6 @@ class FilterSheet extends StatelessWidget {
                       style: TextStyle(
                         color: sel ? Colors.black : AppColors.textSecondary,
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),

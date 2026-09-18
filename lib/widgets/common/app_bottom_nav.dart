@@ -21,7 +21,7 @@ class AppBottomNav extends ConsumerWidget {
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         border: Border(
-          top: BorderSide(color: theme.dividerColor.withOpacity(0.05), width: 1),
+          top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 1),
         ),
       ),
       child: SafeArea(
@@ -39,8 +39,8 @@ class AppBottomNav extends ConsumerWidget {
                   child: InkWell(
                     onTap: () => ref.read(navigationProvider.notifier).setIndex(i),
                     borderRadius: BorderRadius.circular(16),
-                    highlightColor: theme.colorScheme.primary.withOpacity(0.05),
-                    splashColor: theme.colorScheme.primary.withOpacity(0.1),
+                    highlightColor: theme.colorScheme.primary.withValues(alpha: 0.05),
+                    splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -49,7 +49,7 @@ class AppBottomNav extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                           decoration: BoxDecoration(
                             color: active 
-                                ? theme.colorScheme.primary.withOpacity(0.1) 
+                                ? theme.colorScheme.primary.withValues(alpha: 0.1) 
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -58,7 +58,7 @@ class AppBottomNav extends ConsumerWidget {
                             size: 24,
                             color: active 
                                 ? theme.colorScheme.primary 
-                                : theme.textTheme.bodyMedium?.color?.withOpacity(0.5),
+                                : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                           ),
                         ).animate(target: active ? 1 : 0)
                          .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), curve: Curves.easeOutBack),
@@ -68,7 +68,7 @@ class AppBottomNav extends ConsumerWidget {
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: active 
                                 ? theme.colorScheme.primary 
-                                : theme.textTheme.bodyMedium?.color?.withOpacity(0.5),
+                                : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                             fontWeight: active ? FontWeight.bold : FontWeight.normal,
                             fontSize: 10,
                           ),

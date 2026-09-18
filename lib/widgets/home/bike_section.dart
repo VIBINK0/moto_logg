@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/expense_model.dart';
 import '../../providers/bike_provider.dart';
 import '../painters/curved_arrows_painter.dart';
@@ -8,12 +8,12 @@ import 'category_card.dart';
 import 'fuel_card.dart';
 import 'icon_bubble.dart';
 
-class BikeSection extends StatelessWidget {
+class BikeSection extends ConsumerWidget {
   final Map<ExpenseCategory, double> totals;
   const BikeSection({super.key, required this.totals});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (ctx, constraints) {
         final w = constraints.maxWidth;
@@ -66,7 +66,7 @@ class BikeSection extends StatelessWidget {
         final fuelBikePt = Offset(w * 0.50, bikeTop + bikeH * 0.20);
         final maintBikePt = Offset(w * 0.34, bikeTop + bikeH * 0.55);
         final serviceBikePt = Offset(w * 0.49, bikeTop + bikeH * 0.72);
-        final bikeProvider = context.watch<BikeProvider>();
+        final bikeState = ref.watch(bikeProvider);
 
         return SizedBox(
           height: containerH,
@@ -79,7 +79,7 @@ class BikeSection extends StatelessWidget {
                 right: 0,
                 height: bikeH,
                 child: Image.asset(
-                  bikeProvider.selectedBike?.imageUrl ?? 'asset/ns.png',
+                  bikeState.selectedBike?.imageUrl ?? 'asset/ns.png',
                   fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) =>
                       CustomPaint(painter: FallbackBikePainter()),

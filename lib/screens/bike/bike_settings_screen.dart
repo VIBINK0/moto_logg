@@ -1,16 +1,17 @@
-// lib/screens/bike_settings_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/bike_model.dart';
 import '../../providers/bike_provider.dart';
 
-class BikeSettingsScreen extends StatelessWidget {
+class BikeSettingsScreen extends ConsumerWidget {
   const BikeSettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bikeState = ref.watch(bikeProvider);
+    final currentBike = bikeState.selectedBike;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
@@ -31,45 +32,39 @@ class BikeSettingsScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Consumer<BikeProvider>(
-        builder: (context, provider, _) {
-          final currentBike = provider.selectedBike;
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Current selection card
+            if (currentBike != null) _buildCurrentBikeCard(currentBike),
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Current selection card
-                if (currentBike != null) _buildCurrentBikeCard(currentBike),
+            const SizedBox(height: 32),
 
-                const SizedBox(height: 32),
-
-                Text(
-                  'AVAILABLE BIKES',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withOpacity(0.5),
-                    letterSpacing: 2,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Bike list
-                ...BikeModel.availableBikes.map(
-                      (bike) => _buildBikeOption(
-                    context,
-                    bike,
-                    isSelected: currentBike?.id == bike.id,
-                    provider: provider,
-                  ),
-                ),
-              ],
+            Text(
+              'AVAILABLE BIKES',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.5),
+                letterSpacing: 2,
+              ),
             ),
-          );
-        },
+
+            const SizedBox(height: 16),
+
+            // Bike list
+            ...BikeModel.availableBikes.map(
+              (bike) => _buildBikeOption(
+                context,
+                bike,
+                isSelected: currentBike?.id == bike.id,
+                onSelect: () => ref.read(bikeProvider.notifier).selectBike(bike),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -83,12 +78,12 @@ class BikeSettingsScreen extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -98,7 +93,7 @@ class BikeSettingsScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               letterSpacing: 2,
             ),
           ),
@@ -110,7 +105,7 @@ class BikeSettingsScreen extends StatelessWidget {
             errorBuilder: (_, __, ___) => Icon(
               Icons.two_wheeler,
               size: 80,
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
             ),
           ),
           const SizedBox(height: 16),
@@ -128,7 +123,7 @@ class BikeSettingsScreen extends StatelessWidget {
             '${bike.engineCC}cc • ${bike.horsepower}hp',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -140,7 +135,7 @@ class BikeSettingsScreen extends StatelessWidget {
       BuildContext context,
       BikeModel bike, {
         required bool isSelected,
-        required BikeProvider provider,
+        required Future<void> Function() onSelect,
       }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -151,11 +146,11 @@ class BikeSettingsScreen extends StatelessWidget {
               ? null
               : () async {
             HapticFeedback.mediumImpact();
-            await provider.selectBike(bike);
+            await onSelect();
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Switched to ${bike.name}',style: TextStyle(color: Colors.white)),
+                  content: Text('Switched to ${bike.name}', style: const TextStyle(color: Colors.white)),
                   backgroundColor: Colors.grey.shade900,
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -167,89 +162,92 @@ class BikeSettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: isSelected
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.white.withOpacity(0.03),
               border: Border.all(
                 color: isSelected
-                    ? Colors.white.withOpacity(0.3)
-                    : Colors.white.withOpacity(0.1),
+                    ? const Color(0xFF00FF88)
+                    : Colors.white.withValues(alpha: 0.1),
+                width: isSelected ? 2 : 1,
               ),
+              color: isSelected
+                  ? const Color(0xFF00FF88).withValues(alpha: 0.05)
+                  : Colors.transparent,
             ),
             child: Row(
               children: [
                 // Bike thumbnail
                 Container(
                   width: 60,
-                  height: 40,
+                  height: 60,
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Image.asset(
                     bike.imageUrl,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(
+                    errorBuilder: (_, __, ___) => const Icon(
                       Icons.two_wheeler,
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white,
+                      size: 24,
                     ),
                   ),
                 ),
 
                 const SizedBox(width: 16),
 
-                // Bike info
+                // Details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         bike.name,
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: const TextStyle(
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white.withOpacity(isSelected ? 1 : 0.8),
+                          color: Colors.white,
                           letterSpacing: 1,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
-                        '${bike.engineCC}cc • ${bike.horsepower}hp',
+                        '${bike.brandName} • ${bike.engineCC}cc',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // Selection indicator
-                if (isSelected)
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.black,
-                      size: 16,
-                    ),
-                  )
-                else
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                      ),
+                // Radio indicator
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF00FF88)
+                          : Colors.white.withValues(alpha: 0.3),
+                      width: 2,
                     ),
                   ),
+                  child: isSelected
+                      ? Center(
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF00FF88),
+                      ),
+                    ),
+                  )
+                      : null,
+                ),
               ],
             ),
           ),

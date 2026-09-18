@@ -1,26 +1,27 @@
-// Add this to your existing auth service
-
-import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/bike_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../core/routes/app_routes.dart';
+import '../providers/bike_provider.dart';
+import '../services/bike_storage_service.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   /// Sign out and clear bike selection
-  static Future<void> signOut(BuildContext context) async {
-    // Then sign out from Firebase first to stop listeners from triggering bike checks
-    await _auth.signOut();
-
-    // Clear bike selection
-    if (context.mounted) {
-      await context.read<BikeProvider>().clearOnLogout();
+  static Future<void> signOut(BuildContext context, [WidgetRef? ref]) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      await BikeStorageService.clearSelectedBike(uid);
     }
 
-    // Navigate to login and clear stack
+    if (ref != null) {
+      await ref.read(bikeProvider.notifier).clearOnLogout();
+    }
+
+    await _auth.signOut();
+
     if (context.mounted) {
       context.go(AppRoutes.login);
     }

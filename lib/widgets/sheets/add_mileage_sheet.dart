@@ -172,13 +172,11 @@ class _SheetField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final TextInputType? keyboardType;
-  final int maxLines;
 
   const _SheetField({
     required this.controller,
     required this.hint,
     this.keyboardType,
-    this.maxLines = 1,
   });
 
   @override
@@ -186,7 +184,7 @@ class _SheetField extends StatelessWidget {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      maxLines: maxLines,
+      maxLines: 1,
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,

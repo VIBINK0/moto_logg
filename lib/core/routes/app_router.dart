@@ -1,8 +1,10 @@
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../models/detected_transaction_model.dart';
 import '../../screens/bike/bike_selection_screen.dart';
 import '../../screens/bike/bike_settings_screen.dart';
 import '../../screens/expense/calendar_screen.dart';
+import '../../screens/expense/expense_confirmation_screen.dart';
 import '../../screens/mileage/mileage_tracker_screen.dart';
 import '../../screens/root_layout_screen.dart';
 import '../../widgets/common/auth_wrapper.dart';
@@ -49,6 +51,14 @@ class AppRouter {
         path: AppRoutes.mileageTracker,
         name: 'mileage-tracker',
         builder: (context, state) => const MileageTrackerScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.expenseConfirm,
+        name: 'expense-confirm',
+        builder: (context, state) {
+          final tx = state.extra as DetectedTransaction?;
+          return ExpenseConfirmationScreen(transaction: tx);
+        },
       ),
     ],
   );

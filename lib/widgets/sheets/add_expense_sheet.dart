@@ -34,7 +34,7 @@ class AddExpenseFormState {
   }
 }
 
-class AddExpenseFormNotifier extends AutoDisposeNotifier<AddExpenseFormState> {
+class AddExpenseFormNotifier extends Notifier<AddExpenseFormState> {
   @override
   AddExpenseFormState build() => AddExpenseFormState(
         category: ExpenseCategory.fuel,
@@ -48,7 +48,7 @@ class AddExpenseFormNotifier extends AutoDisposeNotifier<AddExpenseFormState> {
 }
 
 final addExpenseFormProvider =
-    NotifierProvider.autoDispose<AddExpenseFormNotifier, AddExpenseFormState>(
+    NotifierProvider<AddExpenseFormNotifier, AddExpenseFormState>(
         AddExpenseFormNotifier.new);
 
 class AddExpenseSheet extends ConsumerWidget {
@@ -104,7 +104,7 @@ class AddExpenseSheet extends ConsumerWidget {
               width: 48,
               height: 5,
               decoration: BoxDecoration(
-                color: theme.dividerColor.withOpacity(0.1),
+                color: theme.dividerColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2.5),
               ),
             ),
@@ -170,9 +170,9 @@ class AddExpenseSheet extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
               ),
               child: Row(
                 children: [
@@ -229,7 +229,7 @@ class _Label extends StatelessWidget {
     return Text(
       text,
       style: theme.textTheme.labelSmall?.copyWith(
-        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5),
+        color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
         fontWeight: FontWeight.bold,
         letterSpacing: 1.2,
       ),

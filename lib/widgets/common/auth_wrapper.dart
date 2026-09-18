@@ -1,34 +1,32 @@
 import 'dart:async';
-import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
 
-class AuthWrapper extends StatefulWidget {
+class AuthWrapper extends ConsumerStatefulWidget {
   const AuthWrapper({super.key});
 
   @override
-  State<AuthWrapper> createState() => _AuthWrapperState();
+  ConsumerState<AuthWrapper> createState() => _AuthWrapperState();
 }
 
-class _AuthWrapperState extends State<AuthWrapper> {
+class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   StreamSubscription<User?>? _sub;
 
   @override
   void initState() {
     super.initState();
-    // Use postFrameCallback to ensure Navigator is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
         if (!mounted) return;
         if (user == null) {
           context.go(AppRoutes.login);
         } else {
-          // Initialize bike provider for the new user
-          context.read<BikeProvider>().initialize(user.uid);
+          ref.read(bikeProvider.notifier).initialize(user.uid);
           context.go(AppRoutes.dashboard);
         }
       });

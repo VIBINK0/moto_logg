@@ -28,7 +28,11 @@ class BikeCarouselItem extends StatelessWidget {
           horizontal: 16,
           vertical: isActive ? 20 : 40,
         ),
-        transform: Matrix4.identity()..scale(isActive ? 1.0 : 0.85),
+        transform: Matrix4.diagonal3Values(
+          isActive ? 1.0 : 0.85,
+          isActive ? 1.0 : 0.85,
+          1.0,
+        ),
         child: Stack(
           children: [
             // Glassmorphism card
@@ -37,34 +41,34 @@ class BikeCarouselItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isActive
-                      ? Colors.white.withOpacity(0.3)
-                      : Colors.white.withOpacity(0.1),
+                      ? Colors.white.withValues(alpha: 0.3)
+                      : Colors.white.withValues(alpha: 0.1),
                   width: isActive ? 2 : 1,
                 ),
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.white.withOpacity(isActive ? 0.15 : 0.08),
-                    Colors.white.withOpacity(isActive ? 0.05 : 0.02),
+                    Colors.white.withValues(alpha: isActive ? 0.15 : 0.08),
+                    Colors.white.withValues(alpha: isActive ? 0.05 : 0.02),
                   ],
                 ),
                 boxShadow: isActive
                     ? [
                   BoxShadow(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     blurRadius: 30,
                     spreadRadius: 5,
                   ),
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
                 ]
                     : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -121,7 +125,7 @@ class BikeCarouselItem extends StatelessWidget {
                             bike.tagline,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                               letterSpacing: 2,
                               fontWeight: FontWeight.w300,
                             ),
@@ -139,7 +143,7 @@ class BikeCarouselItem extends StatelessWidget {
                                 width: 1,
                                 height: 30,
                                 margin: const EdgeInsets.symmetric(horizontal: 24),
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                               ),
                               _buildSpec('${bike.horsepower}', 'HP'),
                             ],
@@ -163,7 +167,7 @@ class BikeCarouselItem extends StatelessWidget {
                         center: Alignment.topCenter,
                         radius: 1.5,
                         colors: [
-                          Colors.white.withOpacity(0.1),
+                          Colors.white.withValues(alpha: 0.1),
                           Colors.transparent,
                         ],
                       ),
@@ -193,7 +197,7 @@ class BikeCarouselItem extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             letterSpacing: 2,
           ),
         ),
@@ -204,13 +208,13 @@ class BikeCarouselItem extends StatelessWidget {
   Widget _buildPlaceholder() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Icon(
         Icons.two_wheeler,
         size: 100,
-        color: Colors.white.withOpacity(0.3),
+        color: Colors.white.withValues(alpha: 0.3),
       ),
     );
   }
