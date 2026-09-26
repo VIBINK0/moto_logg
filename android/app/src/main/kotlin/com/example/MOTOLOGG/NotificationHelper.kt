@@ -77,21 +77,20 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val merchantName = transaction.merchant ?: "Merchant"
+        val merchantName = transaction.merchant?.takeIf { it.isNotBlank() } ?: "Bank Expense"
         val formattedAmount = String.format(Locale.ENGLISH, "₹%.2f", transaction.amount)
 
-        // RemoteInput with quick "Save" choice chip so users can tap 'Save' instantly without typing
+        // RemoteInput with clean label and merchantName as choice that edits before sending
         val remoteInput = RemoteInput.Builder(EXTRA_KEY_NOTE)
-            .setLabel("Type note or tap Save...")
-            .setChoices(arrayOf("Save", "Save Expense"))
+            .setLabel("Go on, justify spending at $merchantName...")
             .setAllowFreeFormInput(true)
             .build()
 
-        // Action buttons displayed on notification (Android OS limits to 3 actions max)
+        // Category action buttons displayed at bottom of notification
         val categories = listOf(
-            Triple("fuel", "⛽ Save Fuel", 1),
-            Triple("service", "🛠️ Save Service", 2),
-            Triple("acc_or_mods", "🧩 Save Acc/Mods", 3)
+            Triple("fuel", "⛽ Fuel", 1),
+            Triple("service", "🛠️ Service", 2),
+            Triple("acc_or_mods", "🧩 Acc/Mods", 3)
         )
 
         val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or
@@ -124,7 +123,7 @@ object NotificationHelper {
                 actionPendingIntent
             )
                 .addRemoteInput(remoteInput)
-                .setAllowGeneratedReplies(true)
+                .setAllowGeneratedReplies(false)
                 .build()
         }
 
@@ -136,16 +135,18 @@ object NotificationHelper {
             .setSmallIcon(iconRes)
             .setContentTitle("💸 Expense detected")
             .setContentText("$formattedAmount spent at $merchantName")
-            .setSubText("Tap category action to save")
+            .setSubText("Select category to log")
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("$formattedAmount spent at $merchantName via ${transaction.paymentMethod ?: "Bank"}\nTap a category button below, then tap Save (or type optional notes).")
+                    .bigText("$formattedAmount spent at $merchantName via ${transaction.paymentMethod ?: "Bank"}\nSelect a category below to log with prefilled notes.")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
-            .setAutoCancel(true)
+            .setOngoing(true) // Persistent until user logs an expense
+            .setAutoCancel(false)
             .setContentIntent(pendingIntent)
 
+        // Add ONLY category actions to bottom action row
         for (action in categoryActions) {
             notificationBuilder.addAction(action)
         }

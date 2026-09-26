@@ -21,6 +21,8 @@ class ExpenseActionReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
         if (intent.action != NotificationHelper.ACTION_SAVE_EXPENSE) {
             return
         }
@@ -29,36 +31,29 @@ class ExpenseActionReceiver : BroadcastReceiver() {
         val notificationId = intent.getIntExtra(NotificationHelper.EXTRA_NOTIFICATION_ID, 0)
         val amount = intent.getDoubleExtra(NotificationHelper.EXTRA_AMOUNT, 0.0)
         val merchant = intent.getStringExtra(NotificationHelper.EXTRA_MERCHANT)
-        val paymentMethod = intent.getStringExtra(NotificationHelper.EXTRA_PAYMENT_METHOD)
-        val transactionId = intent.getStringExtra(NotificationHelper.EXTRA_TRANSACTION_ID)
         val transactionDate = intent.getLongExtra(
             NotificationHelper.EXTRA_TRANSACTION_DATE,
             System.currentTimeMillis()
         )
 
-        // Get user inline notes from RemoteInput
+        // Get user inline notes directly from RemoteInput textfield
         val remoteInputResults = RemoteInput.getResultsFromIntent(intent)
         val rawInput = remoteInputResults?.getCharSequence(NotificationHelper.EXTRA_KEY_NOTE)?.toString()?.trim()
 
-        // Filter out preset "Save" choices so they aren't added as literal note text
-        val customNotes = if (rawInput.isNullOrBlank() ||
-            rawInput.equals("Save", ignoreCase = true) ||
-            rawInput.equals("Save Expense", ignoreCase = true) ||
-            rawInput.equals("Log", ignoreCase = true) ||
-            rawInput.equals("Log Expense", ignoreCase = true)
-        ) {
-            null
-        } else {
+        // Use ONLY the exact value from the textfield (or fallback to merchant if textfield was empty)
+        val finalNotes = if (!rawInput.isNullOrBlank()) {
             rawInput
+        } else {
+            merchant?.takeIf { it.isNotBlank() }
         }
 
         // Resolve category: if category is "acc_or_mods", check notes for modification keywords
         val resolvedCategory = when (rawCategory) {
             "acc_or_mods" -> {
-                if (!customNotes.isNullOrBlank() &&
-                    (customNotes.contains("mod", ignoreCase = true) ||
-                     customNotes.contains("modification", ignoreCase = true) ||
-                     customNotes.contains("tuning", ignoreCase = true))
+                if (!finalNotes.isNullOrBlank() &&
+                    (finalNotes.contains("mod", ignoreCase = true) ||
+                     finalNotes.contains("modification", ignoreCase = true) ||
+                     finalNotes.contains("tuning", ignoreCase = true))
                 ) {
                     "modifications"
                 } else {
@@ -68,21 +63,6 @@ class ExpenseActionReceiver : BroadcastReceiver() {
             else -> rawCategory
         }
 
-        // Build note string combining custom notes (if entered) with merchant & reference
-        val notesBuilder = StringBuilder()
-        if (!customNotes.isNullOrBlank()) {
-            notesBuilder.append(customNotes)
-        }
-        if (!merchant.isNullOrBlank()) {
-            if (notesBuilder.isNotEmpty()) notesBuilder.append(" • ")
-            notesBuilder.append(merchant)
-        }
-        if (!transactionId.isNullOrBlank()) {
-            if (notesBuilder.isNotEmpty()) notesBuilder.append(" • ")
-            notesBuilder.append("Ref: ").append(transactionId)
-        }
-        val finalNotes = if (notesBuilder.isNotEmpty()) notesBuilder.toString() else null
-
         Log.i(TAG, "Saving expense from notification: amount=₹$amount, category=$resolvedCategory, notes=$finalNotes")
 
         val currentUser = FirebaseAuth.getInstance().currentUser
@@ -91,8 +71,8 @@ class ExpenseActionReceiver : BroadcastReceiver() {
             showFeedbackNotification(
                 context,
                 notificationId,
-                "⚠️ Save Failed",
-                "Please log in to MotoLogg to save detected expenses."
+                "⚠️ Log Failed",
+                "Please log in to MotoLogg to log detected expenses."
             )
             return
         }
@@ -110,8 +90,13 @@ class ExpenseActionReceiver : BroadcastReceiver() {
             .collection("expenses")
             .add(expenseData)
             .addOnSuccessListener {
-                Log.i(TAG, "Successfully saved expense directly from notification")
+                Log.i(TAG, "Successfully logged expense directly from notification")
                 NotificationHelper.clearPendingTransaction(context)
+
+                // Cancel the ongoing notification first
+                if (notificationId != 0) {
+                    notificationManager.cancel(notificationId)
+                }
 
                 val displayCategoryLabel = when (resolvedCategory) {
                     "modifications" -> "Modifications"
@@ -124,16 +109,16 @@ class ExpenseActionReceiver : BroadcastReceiver() {
                 showFeedbackNotification(
                     context,
                     notificationId,
-                    "✅ Expense Saved",
-                    "$formattedAmount saved as $displayCategoryLabel" + (if (customNotes != null) " • \"$customNotes\"" else "")
+                    "✅ Expense Logged",
+                    "$formattedAmount logged as $displayCategoryLabel" + (if (finalNotes != null) " • \"$finalNotes\"" else "")
                 )
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to save expense from notification", e)
+                Log.e(TAG, "Failed to log expense from notification", e)
                 showFeedbackNotification(
                     context,
                     notificationId,
-                    "⚠️ Failed to Save Expense",
+                    "⚠️ Failed to Log Expense",
                     "Tap to review and save in the app."
                 )
             }

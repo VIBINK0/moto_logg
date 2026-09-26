@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Notification Header Title -->
+    <TextView
+        android:id="@+id/tv_notification_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="💸 Expense detected"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <!-- Transaction Body Details -->
+    <TextView
+        android:id="@+id/tv_notification_body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="#D1D5DB"
+        android:textSize="13sp" />
+
+    <!-- Full-Width Red Omit Button -->
+    <TextView
+        android:id="@+id/btn_omit_expense"
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_omit_button_red"
+        android:gravity="center"
+        android:text="Omit Expense"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
