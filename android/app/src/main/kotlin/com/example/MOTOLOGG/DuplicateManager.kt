@@ -2,6 +2,7 @@ package com.example.MOTOLOGG
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import org.json.JSONArray
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -9,6 +10,7 @@ import java.util.Locale
 
 object DuplicateManager {
 
+    private const val TAG = "DuplicateManager"
     private const val PREFS_NAME = "moto_logg_sms_duplicates"
     private const val KEY_PROCESSED_LIST = "processed_fingerprints"
     private const val MAX_ENTRIES = 200
@@ -24,6 +26,7 @@ object DuplicateManager {
     fun getFingerprint(transaction: ParsedTransaction): String {
         val ref = transaction.transactionId?.trim()
         if (!ref.isNullOrBlank()) {
+            Log.i(TAG, "getFingerprint-ref  :ref_${ref.uppercase()} ")
             return "ref_${ref.uppercase()}"
         }
 
@@ -32,6 +35,9 @@ object DuplicateManager {
         val dayStr = dayFormat.format(transaction.transactionDate)
         val merchantStr = (transaction.merchant ?: "UNKNOWN").trim().uppercase()
         val composite = "fp_%.2f_%s_%s".format(Locale.ENGLISH, transaction.amount, dayStr, merchantStr)
+        Log.i(TAG, "getFingerprint-dayStr: $dayStr")
+        Log.i(TAG, "getFingerprint-merchantStr: $merchantStr")
+        Log.i(TAG, "getFingerprint-composite: $composite")
 
         return hashString(composite)
     }

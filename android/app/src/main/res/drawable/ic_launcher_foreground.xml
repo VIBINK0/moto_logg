@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Tachometer Track Arc -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#334155"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M 32,62 A 22,22 0 1,1 76,62"/>
+    <!-- Active Speed Arc -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#EF4444"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M 32,62 A 22,22 0 0,1 73,44"/>
+    <!-- Needle -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#EF4444"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M 54,52 L 70,38"/>
+    <!-- Center Pivot Dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 54,49 A 3,3 0 1,1 53.99,49 Z"/>
+    <!-- Log Document Lines -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#94A3B8"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 40,65 L 68,65"/>
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#64748B"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 44,72 L 64,72"/>
+</vector>
