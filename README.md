@@ -16,8 +16,6 @@
 | ![Dashboard](./asset/ns.png) | ![Analytics](./asset/mt15.jpeg) | ![Auth](./asset/unicorn.png) |
 |     *Industrial Design*      |       *Expense Analytics*       |        *Secure Entry*        |
 
-*(Place screenshots in `/assets/screenshots/` and update the placeholders above)*
-
 ---
 
 ## ✨ Features
