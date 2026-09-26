@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.RemoteInput
 import org.json.JSONObject
 import java.util.Locale
 
@@ -16,6 +17,11 @@ object NotificationHelper {
     const val CHANNEL_ID = "expense_detection_channel"
     private const val CHANNEL_NAME = "Expense Alerts"
     private const val CHANNEL_DESC = "Notifications for detected bank transaction expenses"
+
+    const val ACTION_SAVE_EXPENSE = "com.example.MOTOLOGG.ACTION_SAVE_EXPENSE"
+    const val EXTRA_CATEGORY = "extra_category"
+    const val EXTRA_KEY_NOTE = "extra_key_note"
+    const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
 
     const val EXTRA_IS_DETECTED_EXPENSE = "is_detected_expense"
     const val EXTRA_AMOUNT = "amount"
@@ -49,10 +55,10 @@ object NotificationHelper {
         // Save to pending store for cold start retrieval
         savePendingTransaction(context, transaction)
 
-        // Target Intent pointing to MainActivity
+        // Target Intent pointing to MainActivity when notification body is tapped
         val intent = Intent(context, MainActivity::class.java).apply {
             action = "ACTION_VIEW_DETECTED_EXPENSE"
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(EXTRA_IS_DETECTED_EXPENSE, true)
             putExtra(EXTRA_AMOUNT, transaction.amount)
             putExtra(EXTRA_MERCHANT, transaction.merchant)
@@ -74,26 +80,77 @@ object NotificationHelper {
         val merchantName = transaction.merchant ?: "Merchant"
         val formattedAmount = String.format(Locale.ENGLISH, "₹%.2f", transaction.amount)
 
+        // RemoteInput with quick "Save" choice chip so users can tap 'Save' instantly without typing
+        val remoteInput = RemoteInput.Builder(EXTRA_KEY_NOTE)
+            .setLabel("Type note or tap Save...")
+            .setChoices(arrayOf("Save", "Save Expense"))
+            .setAllowFreeFormInput(true)
+            .build()
+
+        // Action buttons displayed on notification (Android OS limits to 3 actions max)
+        val categories = listOf(
+            Triple("fuel", "⛽ Save Fuel", 1),
+            Triple("service", "🛠️ Save Service", 2),
+            Triple("acc_or_mods", "🧩 Save Acc/Mods", 3)
+        )
+
+        val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
+
+        val categoryActions = categories.map { (catKey, catLabel, requestCode) ->
+            val actionIntent = Intent(context, ExpenseActionReceiver::class.java).apply {
+                action = ACTION_SAVE_EXPENSE
+                putExtra(EXTRA_CATEGORY, catKey)
+                putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+                putExtra(EXTRA_AMOUNT, transaction.amount)
+                putExtra(EXTRA_MERCHANT, transaction.merchant)
+                putExtra(EXTRA_PAYMENT_METHOD, transaction.paymentMethod)
+                putExtra(EXTRA_TRANSACTION_ID, transaction.transactionId)
+                putExtra(EXTRA_TRANSACTION_DATE, transaction.transactionDate.time)
+                putExtra(EXTRA_RAW_BODY, transaction.rawBody)
+                putExtra(EXTRA_SENDER, transaction.sender)
+            }
+
+            val actionPendingIntent = PendingIntent.getBroadcast(
+                context,
+                notificationId * 10 + requestCode,
+                actionIntent,
+                pendingIntentFlags
+            )
+
+            NotificationCompat.Action.Builder(
+                0,
+                catLabel,
+                actionPendingIntent
+            )
+                .addRemoteInput(remoteInput)
+                .setAllowGeneratedReplies(true)
+                .build()
+        }
+
         // Use standard app icon or fallback
         val iconRes = context.resources.getIdentifier("ic_launcher", "mipmap", context.packageName)
             .let { if (it != 0) it else android.R.drawable.stat_notify_more }
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconRes)
             .setContentTitle("💸 Expense detected")
             .setContentText("$formattedAmount spent at $merchantName")
-            .setSubText("Tap to review")
+            .setSubText("Tap category action to save")
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("$formattedAmount spent at $merchantName via ${transaction.paymentMethod ?: "Bank"}\nTap to confirm and add to your expenses.")
+                    .bigText("$formattedAmount spent at $merchantName via ${transaction.paymentMethod ?: "Bank"}\nTap a category button below, then tap Save (or type optional notes).")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .build()
 
-        notificationManager.notify(notificationId, notification)
+        for (action in categoryActions) {
+            notificationBuilder.addAction(action)
+        }
+
+        notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
     private fun savePendingTransaction(context: Context, transaction: ParsedTransaction) {

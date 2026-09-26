@@ -56,6 +56,15 @@
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
+
+        <!-- Receiver for handling expense quick-save actions directly from notification -->
+        <receiver
+            android:name=".ExpenseActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.MOTOLOGG.ACTION_SAVE_EXPENSE" />
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
