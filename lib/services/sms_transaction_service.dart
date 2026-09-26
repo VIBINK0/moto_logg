@@ -30,7 +30,7 @@ class SmsTransactionNotifier extends Notifier<SmsTransactionState> {
 
   @override
   SmsTransactionState build() {
-    if (Platform.isAndroid) {
+    if (!kIsWeb&&Platform.isAndroid) {
       _initChannelListener();
       _checkInitialTransaction();
     }

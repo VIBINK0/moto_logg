@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class SmsPermissionStatus {
@@ -18,7 +19,7 @@ class SmsPermissionHelper {
 
   /// Checks the current permission states on Android.
   static Future<SmsPermissionStatus> checkPermissions() async {
-    if (!Platform.isAndroid) {
+    if (kIsWeb) {
       return const SmsPermissionStatus(receiveSms: false, postNotifications: false);
     }
 
@@ -39,7 +40,7 @@ class SmsPermissionHelper {
 
   /// Triggers runtime permission request for RECEIVE_SMS and POST_NOTIFICATIONS.
   static Future<bool> requestPermissions() async {
-    if (!Platform.isAndroid) return false;
+    if (kIsWeb) return false;
 
     try {
       final granted = await _channel.invokeMethod<bool>('requestPermissions');
