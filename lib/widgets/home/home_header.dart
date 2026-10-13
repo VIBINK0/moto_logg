@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
 
@@ -35,14 +36,16 @@ class HomeHeader extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     const Text('👋', style: TextStyle(fontSize: 24))
-                        .animate(onPlay: (controller) => controller.repeat())
-                        .shake(delay: 2.seconds, duration: 1.seconds),
+                        .animate()
+                        .scale(delay: 150.ms, duration: 350.ms, curve: Curves.easeOutBack),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Managing ${bikeState.selectedBike?.name ?? 'your bike'}',
-                  style: theme.textTheme.bodyMedium,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -57,7 +60,7 @@ class HomeHeader extends ConsumerWidget {
             onTap: () {},
           ),
         ],
-      ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.2),
+      ).animate().fadeIn(duration: 400.ms, curve: Curves.easeOutCubic),
     );
   }
 }
@@ -70,7 +73,6 @@ class _HeaderAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -80,12 +82,12 @@ class _HeaderAction extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
-            color: theme.colorScheme.surface,
+            border: Border.all(color: AppColors.border, width: 0.8),
+            color: AppColors.surfaceLight,
           ),
           child: Icon(
             icon,
-            color: theme.colorScheme.onSurface,
+            color: Colors.white,
             size: 20,
           ),
         ),

@@ -19,25 +19,49 @@ class TotalExpenseCard extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.primary.withValues(alpha: 0.8),
+              Color(0xFF1C1C1E),
+              Color(0xFF101012),
             ],
           ),
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.12),
+            width: 1.0,
+          ),
           boxShadow: [
             BoxShadow(
-              color: theme.colorScheme.primary.withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: Column(
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
           children: [
+            Positioned(
+              top: 0,
+              left: 20,
+              right: 20,
+              height: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      Colors.white.withValues(alpha: 0.20),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Column(
+              children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -45,22 +69,25 @@ class TotalExpenseCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Total Investment',
+                      'TOTAL INVESTMENT',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
+                        color: Colors.white.withValues(alpha: 0.55),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.5,
+                        fontSize: 11,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '₹${formatCurrency(grand)}',
                       style: theme.textTheme.displayLarge?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontSize: 36,
+                        color: Colors.white,
+                        fontSize: 38,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -1.0,
                         height: 1,
                       ),
-                    ).animate(key: ValueKey(grand)).fadeIn().slideX(begin: -0.1),
+                    ).animate(key: ValueKey(grand)).fadeIn(duration: 300.ms, curve: Curves.easeOutCubic),
                   ],
                 ),
                 _FilterPill(
@@ -71,7 +98,9 @@ class TotalExpenseCard extends ConsumerWidget {
             ),
           ],
         ),
-      ).animate().fadeIn(duration: 800.ms, delay: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+          ],
+        ),
+      ).animate().fadeIn(duration: 400.ms, curve: Curves.easeOutCubic).slideY(begin: 0.04, end: 0),
     );
   }
 
@@ -98,9 +127,9 @@ class _FilterPill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: theme.colorScheme.onPrimary.withValues(alpha: 0.15),
+          color: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: theme.colorScheme.onPrimary.withValues(alpha: 0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -108,14 +137,14 @@ class _FilterPill extends StatelessWidget {
             Text(
               label,
               style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onPrimary,
-                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(width: 4),
-            Icon(
+            const Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: theme.colorScheme.onPrimary,
+              color: Colors.white,
               size: 16,
             ),
           ],

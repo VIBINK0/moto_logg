@@ -15,8 +15,12 @@ class IconBubble extends StatelessWidget {
       child: Container(
         width: r * 2,
         height: r * 2,
-        decoration: const BoxDecoration(color: AppColors.iconBg, shape: BoxShape.circle),
-        child: Icon(icon, color: AppColors.textPrimary, size: 20),
+        decoration: BoxDecoration(
+          color: AppColors.iconBg,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.border, width: 0.8),
+        ),
+        child: Icon(icon, color: Colors.white, size: 18),
       ),
     );
   }

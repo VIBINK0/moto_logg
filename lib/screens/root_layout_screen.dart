@@ -89,11 +89,6 @@ class _RootLayoutScreenState extends ConsumerState<RootLayoutScreen>
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddSheet(context),
-        child: const Icon(Icons.add, size: 28),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.miniCenterDocked,
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 500),
@@ -115,7 +110,10 @@ class _RootLayoutScreenState extends ConsumerState<RootLayoutScreen>
           ),
         ),
       ),
-      bottomNavigationBar: AppBottomNav(current: navState.currentIndex),
+      bottomNavigationBar: AppBottomNav(
+        current: navState.currentIndex,
+        onAdd: () => _showAddSheet(context),
+      ),
     );
   }
 

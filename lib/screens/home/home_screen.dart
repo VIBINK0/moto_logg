@@ -33,8 +33,7 @@ class HomeScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   BikeSection(totals: totals)
                       .animate()
-                      .fadeIn(delay: 400.ms, duration: 600.ms)
-                      .slideY(begin: 0.05),
+                      .fadeIn(delay: 150.ms, duration: 400.ms, curve: Curves.easeOutCubic),
                 ],
               ),
             );

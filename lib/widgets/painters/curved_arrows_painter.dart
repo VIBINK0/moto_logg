@@ -14,8 +14,8 @@ class CurvedArrowsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final p = Paint()
-      ..color = const Color(0xFFCCCCCC)
-      ..strokeWidth = 1.3
+      ..color = const Color(0x55E5E5EA)
+      ..strokeWidth = 1.1
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 

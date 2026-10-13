@@ -40,10 +40,10 @@ class AppTheme {
 
       // Component Themes
       cardTheme: CardThemeData(
-        color: AppColors.surface,
+        color: AppColors.cardBg,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: AppColors.border, width: 1),
+          side: const BorderSide(color: AppColors.border, width: 0.8),
         ),
         elevation: 0,
       ),
@@ -57,19 +57,20 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: AppColors.border, width: 0.8),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+          borderSide: const BorderSide(color: Colors.white, width: 1.2),
         ),
         hintStyle: const TextStyle(color: AppColors.textDim, fontSize: 14),
       ),
 
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.accent,
+        backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        shape: StadiumBorder(),
+        elevation: 4,
+        shape: CircleBorder(),
       ),
       
       bottomSheetTheme: const BottomSheetThemeData(
