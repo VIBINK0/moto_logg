@@ -7,20 +7,28 @@ import '../models/detected_transaction_model.dart';
 
 class SmsTransactionState {
   final DetectedTransaction? detectedTransaction;
+  final List<DetectedTransaction> pendingQueue;
   final bool isListening;
+  final bool isScanning;
 
   const SmsTransactionState({
     this.detectedTransaction,
+    this.pendingQueue = const [],
     this.isListening = false,
+    this.isScanning = false,
   });
 
   SmsTransactionState copyWith({
     DetectedTransaction? Function()? detectedTransaction,
+    List<DetectedTransaction>? pendingQueue,
     bool? isListening,
+    bool? isScanning,
   }) {
     return SmsTransactionState(
       detectedTransaction: detectedTransaction != null ? detectedTransaction() : this.detectedTransaction,
+      pendingQueue: pendingQueue ?? this.pendingQueue,
       isListening: isListening ?? this.isListening,
+      isScanning: isScanning ?? this.isScanning,
     );
   }
 }
@@ -30,9 +38,11 @@ class SmsTransactionNotifier extends Notifier<SmsTransactionState> {
 
   @override
   SmsTransactionState build() {
-    if (!kIsWeb&&Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       _initChannelListener();
-      _checkInitialTransaction();
+      _checkInitialTransaction().then((_) {
+        syncMissedTransactions();
+      });
     }
     return const SmsTransactionState(isListening: true);
   }
@@ -44,7 +54,7 @@ class SmsTransactionNotifier extends Notifier<SmsTransactionState> {
           final arguments = call.arguments;
           if (arguments is Map) {
             final tx = DetectedTransaction.fromMap(arguments);
-            state = state.copyWith(detectedTransaction: () => tx);
+            _enqueueOrShow(tx);
           }
         } catch (e) {
           debugPrint('Error parsing detected transaction: $e');
@@ -53,17 +63,60 @@ class SmsTransactionNotifier extends Notifier<SmsTransactionState> {
     });
   }
 
+  void _enqueueOrShow(DetectedTransaction tx) {
+    if (state.detectedTransaction == null) {
+      state = state.copyWith(detectedTransaction: () => tx);
+    } else {
+      state = state.copyWith(
+        pendingQueue: [...state.pendingQueue, tx],
+      );
+    }
+  }
+
   Future<void> _checkInitialTransaction() async {
     try {
       final initial = await _channel.invokeMapMethod<dynamic, dynamic>('getInitialTransaction');
       if (initial != null) {
         final tx = DetectedTransaction.fromMap(initial);
-        state = state.copyWith(detectedTransaction: () => tx);
+        _enqueueOrShow(tx);
         await _channel.invokeMethod('clearPendingTransaction');
       }
     } catch (e) {
       debugPrint('Error fetching initial transaction: $e');
     }
+  }
+
+  /// Scans the system SMS inbox for debit transactions received while app was closed.
+  Future<List<DetectedTransaction>> syncMissedTransactions({int lookbackHours = 48}) async {
+    if (kIsWeb || !Platform.isAndroid) return [];
+    try {
+      state = state.copyWith(isScanning: true);
+      final rawList = await _channel.invokeListMethod<dynamic>(
+        'scanMissedSms',
+        {'lookbackHours': lookbackHours},
+      );
+      if (rawList != null && rawList.isNotEmpty) {
+        final txList = <DetectedTransaction>[];
+        for (final item in rawList) {
+          if (item is Map) {
+            try {
+              txList.add(DetectedTransaction.fromMap(item));
+            } catch (e) {
+              debugPrint('Error parsing missed transaction item: $e');
+            }
+          }
+        }
+        for (final tx in txList) {
+          _enqueueOrShow(tx);
+        }
+        return txList;
+      }
+    } catch (e) {
+      debugPrint('Error syncing missed SMS: $e');
+    } finally {
+      state = state.copyWith(isScanning: false);
+    }
+    return [];
   }
 
   /// Manually checks for any pending transaction from notification tap.
@@ -73,7 +126,7 @@ class SmsTransactionNotifier extends Notifier<SmsTransactionState> {
       final initial = await _channel.invokeMapMethod<dynamic, dynamic>('getInitialTransaction');
       if (initial != null) {
         final tx = DetectedTransaction.fromMap(initial);
-        state = state.copyWith(detectedTransaction: () => tx);
+        _enqueueOrShow(tx);
         await _channel.invokeMethod('clearPendingTransaction');
         return tx;
       }
@@ -83,9 +136,19 @@ class SmsTransactionNotifier extends Notifier<SmsTransactionState> {
     return null;
   }
 
-  /// Clears the current transaction once confirmed or dismissed by user.
+  /// Clears the current transaction once confirmed or dismissed by user,
+  /// and promotes the next transaction from the queue if present.
   void clearTransaction() {
-    state = state.copyWith(detectedTransaction: () => null);
+    if (state.pendingQueue.isNotEmpty) {
+      final nextTx = state.pendingQueue.first;
+      final remaining = state.pendingQueue.sublist(1);
+      state = state.copyWith(
+        detectedTransaction: () => nextTx,
+        pendingQueue: remaining,
+      );
+    } else {
+      state = state.copyWith(detectedTransaction: () => null);
+    }
   }
 }
 

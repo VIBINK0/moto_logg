@@ -3,6 +3,7 @@ package com.example.MOTOLOGG
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import android.provider.Telephony
 import android.util.Log
 
@@ -18,6 +19,13 @@ class SmsReceiver : BroadcastReceiver() {
         }
 
         Log.i(TAG, "SMS broadcast received: ${intent.action}")
+
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        val wakeLock = powerManager?.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "MotoLogg:SmsReceiverWakeLock"
+        )
+        wakeLock?.acquire(5000L)
 
         try {
             val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
@@ -71,6 +79,14 @@ class SmsReceiver : BroadcastReceiver() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error handling incoming SMS", e)
+        } finally {
+            if (wakeLock?.isHeld == true) {
+                try {
+                    wakeLock.release()
+                } catch (_: Exception) {
+                    // Ignored
+                }
+            }
         }
     }
 }

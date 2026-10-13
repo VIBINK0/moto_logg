@@ -1,12 +1,16 @@
 package com.example.MOTOLOGG
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
@@ -90,10 +94,18 @@ class MainActivity : FlutterActivity() {
                         true
                     }
 
+                    val isBatteryIgnored = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+                        pm?.isIgnoringBatteryOptimizations(packageName) ?: false
+                    } else {
+                        true
+                    }
+
                     result.success(
                         mapOf(
                             "receiveSms" to (receiveSms && readSms),
-                            "postNotifications" to postNotifications
+                            "postNotifications" to postNotifications,
+                            "isBatteryOptimizationIgnored" to isBatteryIgnored
                         )
                     )
                 }
@@ -136,6 +148,75 @@ class MainActivity : FlutterActivity() {
                             permissionsToRequest.toTypedArray(),
                             PERMISSION_REQUEST_CODE
                         )
+                    }
+                }
+
+                "isBatteryOptimizationIgnored" -> {
+                    val isBatteryIgnored = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+                        pm?.isIgnoringBatteryOptimizations(packageName) ?: false
+                    } else {
+                        true
+                    }
+                    result.success(isBatteryIgnored)
+                }
+
+                "requestIgnoreBatteryOptimization" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+                        if (pm?.isIgnoringBatteryOptimizations(packageName) == false) {
+                            try {
+                                val reqIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                    data = Uri.parse("package:$packageName")
+                                }
+                                startActivity(reqIntent)
+                                result.success(true)
+                            } catch (_: Exception) {
+                                try {
+                                    val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                    startActivity(fallback)
+                                    result.success(true)
+                                } catch (e2: Exception) {
+                                    result.error("BATTERY_ERROR", e2.message, null)
+                                }
+                            }
+                        } else {
+                            result.success(true)
+                        }
+                    } else {
+                        result.success(true)
+                    }
+                }
+
+                "openBatterySettings" -> {
+                    try {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:$packageName")
+                        }
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("SETTINGS_ERROR", e.message, null)
+                    }
+                }
+
+                "scanMissedSms" -> {
+                    val lookbackHours = (call.argument<Number>("lookbackHours")?.toLong()) ?: 48L
+                    val hasRead = ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.READ_SMS
+                    ) == PackageManager.PERMISSION_GRANTED
+
+                    if (!hasRead) {
+                        result.success(emptyList<Map<String, Any?>>())
+                    } else {
+                        Thread {
+                            val missed = SmsInboxScanner.scanRecentSms(applicationContext, lookbackHours)
+                            val list = missed.map { it.toMap() }
+                            Handler(Looper.getMainLooper()).post {
+                                result.success(list)
+                            }
+                        }.start()
                     }
                 }
 

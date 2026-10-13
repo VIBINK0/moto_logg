@@ -21,9 +21,11 @@ class ExpenseActionReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        val pendingResult = goAsync()
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (intent.action != NotificationHelper.ACTION_SAVE_EXPENSE) {
+            pendingResult.finish()
             return
         }
 
@@ -74,6 +76,7 @@ class ExpenseActionReceiver : BroadcastReceiver() {
                 "⚠️ Log Failed",
                 "Please log in to MotoLogg to log detected expenses."
             )
+            pendingResult.finish()
             return
         }
 
@@ -121,6 +124,9 @@ class ExpenseActionReceiver : BroadcastReceiver() {
                     "⚠️ Failed to Log Expense",
                     "Tap to review and save in the app."
                 )
+            }
+            .addOnCompleteListener {
+                pendingResult.finish()
             }
     }
 

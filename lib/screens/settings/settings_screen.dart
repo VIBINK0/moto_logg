@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
-import '../../core/utils/sms_permission_helper.dart';
 import '../../providers/bike_provider.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/common/settings_tile.dart';
+import '../../widgets/sheets/sms_detection_settings_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -103,33 +103,13 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             GestureDetector(
-              onTap: () async {
-                final status = await SmsPermissionHelper.checkPermissions();
-                if (!status.isFullyGranted) {
-                  final granted = await SmsPermissionHelper.requestPermissions();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(granted
-                            ? 'SMS automatic expense detection enabled!'
-                            : 'Permissions denied. Cannot auto-detect transactions.'),
-                      ),
-                    );
-                  }
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('SMS expense detection is active.'),
-                      ),
-                    );
-                  }
-                }
+              onTap: () {
+                SmsDetectionSettingsSheet.show(context);
               },
               child: const SettingsTile(
                 icon: Icons.sms_rounded,
                 title: 'SMS Expense Detection',
-                subtitle: 'Auto-detect UPI & card bank debit alerts',
+                subtitle: 'Auto-detect alerts & manage background sync',
               ),
             ),
             const SettingsTile(
