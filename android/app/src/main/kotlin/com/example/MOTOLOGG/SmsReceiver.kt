@@ -9,7 +9,7 @@ import android.util.Log
 class SmsReceiver : BroadcastReceiver() {
 
     companion object {
-        private const val TAG = "MotoLoggSmsReceiver" //U4exDKTb7TULWBln
+        private const val TAG = "MotoLoggSmsReceiver"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
