@@ -112,6 +112,14 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: 'Auto-detect alerts & manage background sync',
               ),
             ),
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.featureOverview),
+              child: const SettingsTile(
+                icon: Icons.auto_awesome_rounded,
+                title: 'App Features & Guide',
+                subtitle: 'Overview of smart SMS, garage & mileage tracking',
+              ),
+            ),
             const SettingsTile(
               icon: Icons.notifications_rounded,
               title: 'Notifications',

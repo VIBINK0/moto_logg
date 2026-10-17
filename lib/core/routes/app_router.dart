@@ -6,6 +6,7 @@ import '../../screens/bike/bike_settings_screen.dart';
 import '../../screens/expense/calendar_screen.dart';
 import '../../screens/expense/expense_confirmation_screen.dart';
 import '../../screens/mileage/mileage_tracker_screen.dart';
+import '../../screens/onboarding/feature_overview_screen.dart';
 import '../../screens/root_layout_screen.dart';
 import '../../widgets/common/auth_wrapper.dart';
 import '../../widgets/common/bike_check_wrapper.dart';
@@ -19,6 +20,11 @@ class AppRouter {
         path: AppRoutes.root,
         name: 'root',
         builder: (context, state) => const AuthWrapper(),
+      ),
+      GoRoute(
+        path: AppRoutes.featureOverview,
+        name: 'feature-overview',
+        builder: (context, state) => const FeatureOverviewScreen(),
       ),
       GoRoute(
         path: AppRoutes.login,

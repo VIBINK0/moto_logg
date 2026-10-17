@@ -7,6 +7,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
 
+import '../../services/onboarding_service.dart';
+
 class AuthWrapper extends ConsumerStatefulWidget {
   const AuthWrapper({super.key});
 
@@ -21,15 +23,27 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
-        if (!mounted) return;
-        if (user == null) {
-          context.go(AppRoutes.login);
-        } else {
-          ref.read(bikeProvider.notifier).initialize(user.uid);
-          context.go(AppRoutes.dashboard);
-        }
-      });
+      _checkFlow();
+    });
+  }
+
+  Future<void> _checkFlow() async {
+    final hasSeenFeatures = await OnboardingService.hasSeenFeatures();
+    if (!mounted) return;
+
+    if (!hasSeenFeatures) {
+      context.go(AppRoutes.featureOverview);
+      return;
+    }
+
+    _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (!mounted) return;
+      if (user == null) {
+        context.go(AppRoutes.login);
+      } else {
+        ref.read(bikeProvider.notifier).initialize(user.uid);
+        context.go(AppRoutes.dashboard);
+      }
     });
   }
 
