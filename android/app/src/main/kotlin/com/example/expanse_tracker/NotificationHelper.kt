@@ -1,4 +1,4 @@
-package com.example.MOTOLOGG
+package com.example.expanse_tracker
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -18,7 +18,7 @@ object NotificationHelper {
     private const val CHANNEL_NAME = "Expense Alerts"
     private const val CHANNEL_DESC = "Notifications for detected bank transaction expenses"
 
-    const val ACTION_SAVE_EXPENSE = "com.example.MOTOLOGG.ACTION_SAVE_EXPENSE"
+    const val ACTION_SAVE_EXPENSE = "com.example.expanse_tracker.ACTION_SAVE_EXPENSE"
     const val EXTRA_CATEGORY = "extra_category"
     const val EXTRA_KEY_NOTE = "extra_key_note"
     const val EXTRA_NOTIFICATION_ID = "extra_notification_id"

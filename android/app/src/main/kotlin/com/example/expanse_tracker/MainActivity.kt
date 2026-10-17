@@ -1,4 +1,4 @@
-package com.example.MOTOLOGG
+package com.example.expanse_tracker
 
 import android.Manifest
 import android.content.Context

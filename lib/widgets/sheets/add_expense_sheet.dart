@@ -45,10 +45,15 @@ class AddExpenseFormNotifier extends Notifier<AddExpenseFormState> {
   void setDate(DateTime date) => state = state.copyWith(selectedDate: date);
   void setLoading(bool loading) => state = state.copyWith(isLoading: loading);
   void setError(String? error) => state = state.copyWith(errorMessage: error);
+  void reset() => state = AddExpenseFormState(
+        category: ExpenseCategory.fuel,
+        selectedDate: DateTime.now(),
+        isLoading: false,
+      );
 }
 
 final addExpenseFormProvider =
-    NotifierProvider<AddExpenseFormNotifier, AddExpenseFormState>(
+    NotifierProvider.autoDispose<AddExpenseFormNotifier, AddExpenseFormState>(
         AddExpenseFormNotifier.new);
 
 class AddExpenseSheet extends ConsumerWidget {
@@ -77,18 +82,29 @@ class AddExpenseSheet extends ConsumerWidget {
       
       try {
         final service = ref.read(expenseServiceProvider);
-        if (service != null) {
-          await service.add(Expense(
-            id: '',
-            category: formState.category,
-            amount: amount,
-            date: formState.selectedDate,
-            notes: noteController.text.trim(),
-          ));
-          if (context.mounted) Navigator.pop(context);
+        if (service == null) {
+          formNotifier.setError('Please sign in to add expenses');
+          return;
+        }
+
+        await service.add(Expense(
+          id: '',
+          category: formState.category,
+          amount: amount,
+          date: formState.selectedDate,
+          notes: noteController.text.trim(),
+        ));
+
+        amountController.clear();
+        noteController.clear();
+        formNotifier.setLoading(false);
+
+        if (context.mounted) {
+          Navigator.of(context).pop();
         }
       } catch (e) {
-        formNotifier.setError('Error saving expense');
+        formNotifier.setError('Error saving expense: $e');
+      } finally {
         formNotifier.setLoading(false);
       }
     }
@@ -217,8 +233,16 @@ class AddExpenseSheet extends ConsumerWidget {
 }
 
 // Internal providers for controllers to keep the UI clean
-final _amountControllerProvider = Provider.autoDispose((ref) => TextEditingController());
-final _noteControllerProvider = Provider.autoDispose((ref) => TextEditingController());
+final _amountControllerProvider = Provider.autoDispose((ref) {
+  final controller = TextEditingController();
+  ref.onDispose(() => controller.dispose());
+  return controller;
+});
+final _noteControllerProvider = Provider.autoDispose((ref) {
+  final controller = TextEditingController();
+  ref.onDispose(() => controller.dispose());
+  return controller;
+});
 
 class _Label extends StatelessWidget {
   final String text;

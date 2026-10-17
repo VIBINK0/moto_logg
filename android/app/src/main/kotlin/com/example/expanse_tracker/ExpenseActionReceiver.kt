@@ -1,4 +1,4 @@
-package com.example.MOTOLOGG
+package com.example.expanse_tracker
 
 import android.app.NotificationManager
 import android.app.PendingIntent

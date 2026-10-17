@@ -190,6 +190,7 @@ class _ExpenseConfirmationScreenState extends ConsumerState<ExpenseConfirmationS
       );
 
       await service.add(expense);
+      formNotifier.setSaving(false);
 
       // Clear the detected transaction from service state
       ref.read(smsTransactionProvider.notifier).clearTransaction();
