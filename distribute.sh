@@ -2,7 +2,8 @@
 
 # ==============================================================================
 # MotoLogg - Firebase App Distribution Automation Script
-# Reads release notes from 'releasenotes.md' and uploads the release APK.
+# Cleans Flutter, builds a fresh release APK, and uploads it to Firebase.
+# Reads release notes from 'releasenotes.md'.
 # ==============================================================================
 
 set -eo pipefail
@@ -15,7 +16,6 @@ cd "$SCRIPT_DIR"
 APP_ID="1:307266324548:android:8609d0ba88fab165789411"
 NOTES_FILE="$SCRIPT_DIR/releasenotes.md"
 APK_PATH="$SCRIPT_DIR/build/app/outputs/flutter-apk/app-release.apk"
-SKIP_BUILD=false
 TESTER_GROUP="DEV"
 
 # Text formatting
@@ -24,93 +24,141 @@ GREEN="\033[0;32m"
 CYAN="\033[0;36m"
 YELLOW="\033[0;33m"
 RED="\033[0;31m"
-NC="\033[0m" # No Color
+NC="\033[0m"
 
-# Parse arguments
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    --skip-build|-s)
-      SKIP_BUILD=true
-      shift
-      ;;
-    --help|-h)
-      echo -e "${BOLD}Usage:${NC} ./distribute.sh [options]"
-      echo ""
-      echo "Options:"
-      echo "  -s, --skip-build       Skip 'flutter build apk --release' and upload existing APK"
-      echo "  -h, --help             Display this help message"
-      echo ""
-      echo "Target Group: DEV"
-      exit 0
-      ;;
-    *)
-      echo -e "${YELLOW}Warning: Unknown argument '$1' ignored.${NC}"
-      shift
-      ;;
-  esac
-done
+# ==============================================================================
+# Header
+# ==============================================================================
 
 echo -e "${BOLD}${CYAN}====================================================${NC}"
-echo -e "${BOLD}${CYAN}    🏍️  MotoLogg Firebase App Distribution  🚀       ${NC}"
+echo -e "${BOLD}${CYAN}    🏍️ MotoLogg Firebase App Distribution 🚀${NC}"
 echo -e "${BOLD}${CYAN}====================================================${NC}"
 echo ""
 
-# 1. Check release notes file
+# ==============================================================================
+# 1. Check release notes
+# ==============================================================================
+
 if [ ! -f "$NOTES_FILE" ]; then
-  echo -e "${RED}❌ Error: Release notes file not found at: $NOTES_FILE${NC}"
-  echo -e "${YELLOW}Creating a blank releasenotes.md for you. Please edit it and re-run.${NC}"
-  cat << 'EOF' > "$NOTES_FILE"
+  echo -e "${RED}❌ Error: Release notes file not found:${NC}"
+  echo "$NOTES_FILE"
+
+  echo -e "${YELLOW}Creating a release notes template.${NC}"
+
+  cat <<'EOF' > "$NOTES_FILE"
 # MotoLogg Release Notes
 
 - Bug fixes and performance improvements.
 EOF
+
+  echo -e "${YELLOW}Please edit releasenotes.md and run the script again.${NC}"
   exit 1
 fi
 
-echo -e "${GREEN}📝 Found release notes in releasenotes.md:${NC}"
+if [ ! -s "$NOTES_FILE" ]; then
+  echo -e "${RED}❌ Error: Release notes file is empty.${NC}"
+  exit 1
+fi
+
+echo -e "${GREEN}📝 Release notes:${NC}"
 echo "----------------------------------------------------"
 cat "$NOTES_FILE"
 echo "----------------------------------------------------"
 echo ""
 
-# 2. Check Firebase CLI
-if ! command -v firebase &> /dev/null; then
-  echo -e "${RED}❌ Firebase CLI ('firebase') is not installed or not in PATH.${NC}"
-  echo -e "${YELLOW}Install it using: npm install -g firebase-tools${NC}"
+# ==============================================================================
+# 2. Check required tools
+# ==============================================================================
+
+if ! command -v flutter >/dev/null 2>&1; then
+  echo -e "${RED}❌ Flutter is not installed or not in PATH.${NC}"
   exit 1
 fi
 
-# 3. Build Release APK (unless skipped)
-if [ "$SKIP_BUILD" = true ]; then
-  echo -e "${YELLOW}⏩ Skipping build step (--skip-build specified).${NC}"
-  if [ ! -f "$APK_PATH" ]; then
-    echo -e "${RED}❌ Error: No release APK found at $APK_PATH!${NC}"
-    echo -e "${YELLOW}Run without --skip-build first to compile the APK.${NC}"
-    exit 1
-  fi
-else
-  echo -e "${CYAN}🔨 Building release APK (flutter build apk --release)...${NC}"
-  flutter build apk --release
-  echo -e "${GREEN}✅ Build complete!${NC}"
+if ! command -v firebase >/dev/null 2>&1; then
+  echo -e "${RED}❌ Firebase CLI is not installed or not in PATH.${NC}"
+  echo -e "${YELLOW}Install using: npm install -g firebase-tools${NC}"
+  exit 1
 fi
 
-# Verify APK exists
+if ! command -v du >/dev/null 2>&1; then
+  echo -e "${RED}❌ Required command 'du' is unavailable.${NC}"
+  exit 1
+fi
+
+# ==============================================================================
+# 3. Clean Flutter project
+# ==============================================================================
+
+echo -e "${CYAN}🧹 Cleaning Flutter project...${NC}"
+
+flutter clean
+
+echo -e "${GREEN}✅ Flutter clean completed!${NC}"
+echo ""
+
+# ==============================================================================
+# 4. Fetch Flutter dependencies
+# ==============================================================================
+
+echo -e "${CYAN}📦 Fetching Flutter dependencies...${NC}"
+
+flutter pub get
+
+echo -e "${GREEN}✅ Dependencies fetched successfully!${NC}"
+echo ""
+
+# ==============================================================================
+# 5. Build a fresh release APK
+# ==============================================================================
+
+echo -e "${CYAN}🔨 Building fresh release APK...${NC}"
+
+flutter build apk --release
+
+echo -e "${GREEN}✅ Release build completed!${NC}"
+echo ""
+
+# ==============================================================================
+# 6. Verify the APK
+# ==============================================================================
+
 if [ ! -f "$APK_PATH" ]; then
-  echo -e "${RED}❌ Error: APK not found at: $APK_PATH${NC}"
+  echo -e "${RED}❌ Error: APK not found at:${NC}"
+  echo "$APK_PATH"
+  exit 1
+fi
+
+if [ ! -s "$APK_PATH" ]; then
+  echo -e "${RED}❌ Error: APK exists but is empty.${NC}"
   exit 1
 fi
 
 APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
-echo -e "${CYAN}📦 APK ready:${NC} $APK_PATH (${BOLD}${APK_SIZE}${NC})"
+
+echo -e "${CYAN}📦 Fresh APK ready:${NC}"
+echo "Path: $APK_PATH"
+echo -e "Size: ${BOLD}${APK_SIZE}${NC}"
 echo ""
 
-# 4. Construct Firebase distribution command
-DISTRIBUTE_CMD=(firebase appdistribution:distribute "$APK_PATH" --app "$APP_ID" --release-notes-file "$NOTES_FILE" --groups "DEV")
+# ==============================================================================
+# 7. Distribute APK through Firebase App Distribution
+# ==============================================================================
 
-echo -e "${CYAN}👥 Distributing to group:${NC} DEV"
+echo -e "${CYAN}👥 Target tester group:${NC} $TESTER_GROUP"
 echo -e "${CYAN}🚀 Uploading APK to Firebase App Distribution...${NC}"
-"${DISTRIBUTE_CMD[@]}"
+echo ""
+
+firebase appdistribution:distribute "$APK_PATH" \
+  --app "$APP_ID" \
+  --release-notes-file "$NOTES_FILE" \
+  --groups "$TESTER_GROUP"
 
 echo ""
+
+# ==============================================================================
+# 8. Success
+# ==============================================================================
+
 echo -e "${BOLD}${GREEN}🎉 Successfully uploaded to Firebase App Distribution!${NC}"
-echo -e "${GREEN}Testers can now download the new build directly from the Firebase App Tester app or web portal.${NC}"
+echo -e "${GREEN}Testers can download the new build through Firebase App Tester or the web portal.${NC}"
