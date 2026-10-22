@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/expense_model.dart';
 import '../../providers/expense_provider.dart';
 import '../../widgets/common/expense_tile.dart';
+import '../../widgets/sheets/edit_expense_sheet.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -267,6 +268,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       );
     }
 
+    void openEditSheet(Expense e) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => EditExpenseSheet(expense: e),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: expenses.length,
@@ -274,6 +287,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         final expense = expenses[index];
         return ExpenseTile(
           expense: expense,
+          onEdit: () => openEditSheet(expense),
           onDelete: () => ref.read(expenseServiceProvider)?.delete(expense.id),
         );
       },

@@ -7,7 +7,13 @@ import '../../models/expense_model.dart';
 class ExpenseTile extends StatelessWidget {
   final Expense expense;
   final VoidCallback onDelete;
-  const ExpenseTile({super.key, required this.expense, required this.onDelete});
+  final VoidCallback? onEdit;
+  const ExpenseTile({
+    super.key,
+    required this.expense,
+    required this.onDelete,
+    this.onEdit,
+  });
 
   Future<bool?> _showFunnyConfirmDialog(BuildContext context) async {
     final funnyMessages = [
@@ -82,72 +88,89 @@ class ExpenseTile extends StatelessWidget {
           size: 20,
         ),
       ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Material(
           color: AppColors.cardBg,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border, width: 0.8),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
+          child: InkWell(
+            onTap: onEdit,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.iconBg,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border, width: 0.8),
               ),
-              child: Icon(
-                expense.category.iconData,
-                color: AppColors.textPrimary,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    expense.category.label,
-                    style: const TextStyle(
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.iconBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      expense.category.iconData,
                       color: AppColors.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      size: 18,
                     ),
                   ),
-                  if (expense.notes != null && expense.notes!.isNotEmpty)
-                    Text(
-                      expense.notes!,
-                      style: const TextStyle(color: AppColors.textDim, fontSize: 11),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          expense.category.label,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (expense.notes != null && expense.notes!.isNotEmpty)
+                          Text(
+                            expense.notes!,
+                            style: const TextStyle(color: AppColors.textDim, fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
                     ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '₹${formatCurrency(expense.amount)}',
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        '${expense.date.day.toString().padLeft(2, '0')}/'
+                        '${expense.date.month.toString().padLeft(2, '0')}/'
+                        '${expense.date.year}',
+                        style: const TextStyle(color: AppColors.textDim, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                  if (onEdit != null) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 14,
+                      color: AppColors.textDim.withValues(alpha: 0.4),
+                    ),
+                  ],
                 ],
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '₹${formatCurrency(expense.amount)}',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  '${expense.date.day.toString().padLeft(2, '0')}/'
-                  '${expense.date.month.toString().padLeft(2, '0')}/'
-                  '${expense.date.year}',
-                  style: const TextStyle(color: AppColors.textDim, fontSize: 10),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );

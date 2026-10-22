@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_log_expense"
+        android:enabled="true"
+        android:icon="@drawable/ic_stat_moto_logg"
+        android:shortcutShortLabel="@string/shortcut_quick_log_short"
+        android:shortcutLongLabel="@string/shortcut_quick_log_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.expanse_tracker"
+            android:targetClass="com.example.expanse_tracker.QuickLogActivity" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+</shortcuts>

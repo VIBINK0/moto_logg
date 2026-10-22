@@ -18,6 +18,7 @@ class FirestoreService {
       .map((s) => s.docs.map(Expense.fromFirestore).toList());
 
   Future<void> add(Expense e) => _col.add(e.toMap());
+  Future<void> update(Expense e) => _col.doc(e.id).update(e.toMap());
   Future<void> delete(String id) => _col.doc(id).delete();
 
   /// Checks whether an expense with the given transactionId or amount+date already exists.

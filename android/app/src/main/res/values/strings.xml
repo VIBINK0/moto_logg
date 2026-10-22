@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MOTOLOGG</string>
+    <string name="shortcut_quick_log_short">Quick Log</string>
+    <string name="shortcut_quick_log_long">Quick Add Expense</string>
+    <string name="quick_log_alias_label">Moto Quick Log</string>
+</resources>

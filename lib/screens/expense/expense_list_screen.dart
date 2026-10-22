@@ -6,9 +6,22 @@ import '../../core/utils/formatters.dart';
 import '../../models/expense_model.dart';
 import '../../providers/expense_provider.dart';
 import '../../widgets/common/expense_tile.dart';
+import '../../widgets/sheets/edit_expense_sheet.dart';
 
 class ExpenseListScreen extends ConsumerWidget {
   const ExpenseListScreen({super.key});
+
+  void _openEditSheet(BuildContext context, Expense expense) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => EditExpenseSheet(expense: expense),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -98,6 +111,7 @@ class ExpenseListScreen extends ConsumerWidget {
                         ...items.map(
                           (e) => ExpenseTile(
                             expense: e,
+                            onEdit: () => _openEditSheet(context, e),
                             onDelete: () {
                               ref.read(expenseServiceProvider)?.delete(e.id);
                             },
