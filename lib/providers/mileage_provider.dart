@@ -1,26 +1,115 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mileage_model.dart';
+import 'auth_provider.dart';
 
-class MileageProvider with ChangeNotifier {
-  List<MileageRecord> _records = [];
-  final String _prefKey = 'mileage_records_v2';
+class MileageState {
+  final List<MileageRecord> records;
+  final bool isLoading;
 
-  List<MileageRecord> get records => [..._records];
+  const MileageState({
+    this.records = const [],
+    this.isLoading = false,
+  });
 
-  MileageProvider() {
-    loadRecords();
+  MileageState copyWith({
+    List<MileageRecord>? records,
+    bool? isLoading,
+  }) {
+    return MileageState(
+      records: records ?? this.records,
+      isLoading: isLoading ?? this.isLoading,
+    );
   }
 
-  Future<void> loadRecords() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? recordsJson = prefs.getString(_prefKey);
-    if (recordsJson != null) {
-      final List<dynamic> decoded = jsonDecode(recordsJson);
-      _records = decoded.map((item) => MileageRecord.fromJson(item)).toList();
-      _records.sort((a, b) => b.date.compareTo(a.date));
-      notifyListeners();
+  List<MileageComparison> get comparisons {
+    final List<MileageComparison> list = [];
+    for (int i = 0; i < records.length; i++) {
+      final current = records[i];
+      MileageRecord? previous;
+      if (i + 1 < records.length) {
+        previous = records[i + 1];
+      }
+      list.add(MileageComparison(current: current, previous: previous));
+    }
+    return list;
+  }
+
+  double get averageMileage {
+    final comps = comparisons.where((c) => c.previous != null).toList();
+    if (comps.isEmpty) return 0.0;
+
+    double totalDistance = 0;
+    double totalFuel = 0;
+    for (final c in comps) {
+      totalDistance += c.distanceTraveled;
+      totalFuel += c.current.fuelLiters;
+    }
+    return totalFuel > 0 ? totalDistance / totalFuel : 0.0;
+  }
+
+  double get totalSpent => records.fold(0, (sum, r) => sum + r.totalCost);
+
+  double get averageCostPerKm {
+    final comps = comparisons.where((c) => c.previous != null).toList();
+    if (comps.isEmpty) return 0.0;
+
+    double totalDistance = 0;
+    double totalCost = 0;
+    for (final c in comps) {
+      totalDistance += c.distanceTraveled;
+      totalCost += c.current.totalCost;
+    }
+    return totalDistance > 0 ? totalCost / totalDistance : 0.0;
+  }
+}
+
+class MileageNotifier extends Notifier<MileageState> {
+  static const String _basePrefKey = 'mileage_records_v2';
+
+  String _getUserPrefKey([String? uid]) {
+    final userId = uid ?? ref.read(currentUserProvider)?.uid;
+    if (userId == null || userId.isEmpty) return _basePrefKey;
+    return '${_basePrefKey}_$userId';
+  }
+
+  @override
+  MileageState build() {
+    final user = ref.watch(currentUserProvider);
+    if (user == null) {
+      return const MileageState();
+    }
+    _loadRecordsForUser(user.uid);
+    return const MileageState(isLoading: true);
+  }
+
+  Future<void> _loadRecordsForUser(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userKey = '${_basePrefKey}_$userId';
+      String? recordsJson = prefs.getString(userKey);
+
+      // Graceful migration from legacy non-scoped key if user has no scoped key
+      if (recordsJson == null && prefs.containsKey(_basePrefKey)) {
+        recordsJson = prefs.getString(_basePrefKey);
+        if (recordsJson != null) {
+          await prefs.setString(userKey, recordsJson);
+        }
+      }
+
+      if (recordsJson != null) {
+        final List<dynamic> decoded = jsonDecode(recordsJson);
+        final records = decoded.map((item) => MileageRecord.fromJson(item)).toList();
+        records.sort((a, b) => b.date.compareTo(a.date));
+        state = MileageState(records: records, isLoading: false);
+      } else {
+        state = const MileageState(records: [], isLoading: false);
+      }
+    } catch (e) {
+      debugPrint('Error loading mileage records: $e');
+      state = const MileageState(records: [], isLoading: false);
     }
   }
 
@@ -36,66 +125,30 @@ class MileageProvider with ChangeNotifier {
       pricePerLiter: pricePerLiter,
       date: DateTime.now(),
     );
-    _records.insert(0, newRecord);
-    _records.sort((a, b) => b.date.compareTo(a.date));
-    notifyListeners();
+    final updated = [newRecord, ...state.records];
+    updated.sort((a, b) => b.date.compareTo(a.date));
+    state = state.copyWith(records: updated);
     await _saveRecords();
   }
 
   Future<void> deleteRecord(String id) async {
-    _records.removeWhere((rec) => rec.id == id);
-    notifyListeners();
+    final updated = state.records.where((rec) => rec.id != id).toList();
+    state = state.copyWith(records: updated);
     await _saveRecords();
   }
 
   Future<void> _saveRecords() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String encoded = jsonEncode(_records.map((r) => r.toJson()).toList());
-    await prefs.setString(_prefKey, encoded);
-  }
-
-  List<MileageComparison> get comparisons {
-    List<MileageComparison> list = [];
-    for (int i = 0; i < _records.length; i++) {
-      MileageRecord current = _records[i];
-      MileageRecord? previous;
-      
-      // Since records are sorted newest to oldest, the "previous" record 
-      // chronologically is at index i + 1
-      if (i + 1 < _records.length) {
-        previous = _records[i + 1];
-      }
-      
-      list.add(MileageComparison(current: current, previous: previous));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getUserPrefKey();
+      final String encoded = jsonEncode(state.records.map((r) => r.toJson()).toList());
+      await prefs.setString(key, encoded);
+    } catch (e) {
+      debugPrint('Error saving mileage records: $e');
     }
-    return list;
-  }
-
-  double get averageMileage {
-    final comps = comparisons.where((c) => c.previous != null).toList();
-    if (comps.isEmpty) return 0.0;
-    
-    double totalDistance = 0;
-    double totalFuel = 0;
-    for (var c in comps) {
-      totalDistance += c.distanceTraveled;
-      totalFuel += c.current.fuelLiters;
-    }
-    return totalDistance / totalFuel;
-  }
-
-  double get totalSpent => _records.fold(0, (sum, r) => sum + r.totalCost);
-
-  double get averageCostPerKm {
-    final comps = comparisons.where((c) => c.previous != null).toList();
-    if (comps.isEmpty) return 0.0;
-
-    double totalDistance = 0;
-    double totalCost = 0;
-    for (var c in comps) {
-      totalDistance += c.distanceTraveled;
-      totalCost += c.current.totalCost;
-    }
-    return totalDistance > 0 ? totalCost / totalDistance : 0.0;
   }
 }
+
+final mileageProvider = NotifierProvider<MileageNotifier, MileageState>(
+  MileageNotifier.new,
+);

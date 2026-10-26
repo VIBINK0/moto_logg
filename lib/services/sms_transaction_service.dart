@@ -150,6 +150,10 @@ class SmsTransactionNotifier extends Notifier<SmsTransactionState> {
       state = state.copyWith(detectedTransaction: () => null);
     }
   }
+
+  void clearAll() {
+    state = const SmsTransactionState(isListening: true);
+  }
 }
 
 final smsTransactionProvider =

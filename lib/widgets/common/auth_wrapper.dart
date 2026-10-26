@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
+import '../../providers/navigation_provider.dart';
 
 import '../../services/onboarding_service.dart';
 
@@ -41,6 +42,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       if (user == null) {
         context.go(AppRoutes.login);
       } else {
+        ref.read(navigationProvider.notifier).reset();
         ref.read(bikeProvider.notifier).initialize(user.uid);
         context.go(AppRoutes.dashboard);
       }

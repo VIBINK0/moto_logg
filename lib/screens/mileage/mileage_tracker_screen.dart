@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/mileage_provider.dart';
 import '../../widgets/sheets/add_mileage_sheet.dart';
@@ -60,13 +60,13 @@ class MileageTrackerScreen extends StatelessWidget {
   }
 }
 
-class _AverageMileageCard extends StatelessWidget {
+class _AverageMileageCard extends ConsumerWidget {
   const _AverageMileageCard();
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<MileageProvider>();
-    final records = provider.records;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mileage = ref.watch(mileageProvider);
+    final records = mileage.records;
     
     // Only show average if there are more than 2 records (at least 2 comparisons)
     if (records.length <= 2) return const SizedBox.shrink();
@@ -93,7 +93,7 @@ class _AverageMileageCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${provider.averageMileage.toStringAsFixed(2)} km/L',
+                    '${mileage.averageMileage.toStringAsFixed(2)} km/L',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 22,
@@ -112,8 +112,8 @@ class _AverageMileageCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _StatItem(label: 'TOTAL SPENT', value: '₹${provider.totalSpent.toInt()}'),
-              _StatItem(label: 'AVG COST/KM', value: '₹${provider.averageCostPerKm.toStringAsFixed(2)}'),
+              _StatItem(label: 'TOTAL SPENT', value: '₹${mileage.totalSpent.toInt()}'),
+              _StatItem(label: 'AVG COST/KM', value: '₹${mileage.averageCostPerKm.toStringAsFixed(2)}'),
             ],
           ),
         ],
@@ -146,7 +146,7 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-class _MileageHistoryList extends StatelessWidget {
+class _MileageHistoryList extends ConsumerWidget {
   const _MileageHistoryList();
 
   Future<bool?> _showFunnyConfirmDialog(BuildContext context) async {
@@ -197,9 +197,18 @@ class _MileageHistoryList extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<MileageProvider>();
-    final comparisons = provider.comparisons;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mileage = ref.watch(mileageProvider);
+    final comparisons = mileage.comparisons;
+
+    if (mileage.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 1.5,
+          color: AppColors.textDim,
+        ),
+      );
+    }
 
     if (comparisons.isEmpty) {
       return const Center(
@@ -233,7 +242,7 @@ class _MileageHistoryList extends StatelessWidget {
             child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
           ),
           onDismissed: (_) {
-            provider.deleteRecord(record.id);
+            ref.read(mileageProvider.notifier).deleteRecord(record.id);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Poof! It vanished into thin air.',style: TextStyle(color: Colors.white)),

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../providers/bike_provider.dart';
+import '../../../../providers/navigation_provider.dart';
 import '../../../../widgets/common/primary_button.dart';
 import '../widgets/auth_text_field.dart';
 
@@ -156,6 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        ref.read(navigationProvider.notifier).reset();
         await ref.read(bikeProvider.notifier).initialize(user.uid);
         if (mounted) {
           context.go(AppRoutes.dashboard);

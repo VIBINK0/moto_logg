@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/mileage_provider.dart';
 
-class AddMileageSheet extends StatefulWidget {
+class AddMileageSheet extends ConsumerStatefulWidget {
   const AddMileageSheet({super.key});
 
   @override
-  State<AddMileageSheet> createState() => _AddMileageSheetState();
+  ConsumerState<AddMileageSheet> createState() => _AddMileageSheetState();
 }
 
-class _AddMileageSheetState extends State<AddMileageSheet> {
+class _AddMileageSheetState extends ConsumerState<AddMileageSheet> {
   final _odoCtrl = TextEditingController();
   final _fuelCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
@@ -41,7 +41,7 @@ class _AddMileageSheetState extends State<AddMileageSheet> {
     });
 
     try {
-      await context.read<MileageProvider>().addRecord(
+      await ref.read(mileageProvider.notifier).addRecord(
             odometerReading: odo,
             fuelLiters: fuel,
             pricePerLiter: price,

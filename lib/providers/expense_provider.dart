@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/expense_model.dart';
 import '../services/firestore_service.dart';
+import 'auth_provider.dart';
 
 class ExpenseFilterState {
   final String mode; // 'All Time' | 'Month' | 'Year'
@@ -64,6 +64,8 @@ class ExpenseFilterNotifier extends Notifier<ExpenseFilterState> {
       state = state.copyWith(selectedYear: year);
     }
   }
+
+  void reset() => state = ExpenseFilterState.initial();
 }
 
 final expenseFilterProvider = NotifierProvider<ExpenseFilterNotifier, ExpenseFilterState>(
@@ -71,7 +73,7 @@ final expenseFilterProvider = NotifierProvider<ExpenseFilterNotifier, ExpenseFil
 );
 
 final expensesStreamProvider = StreamProvider<List<Expense>>((ref) {
-  final user = FirebaseAuth.instance.currentUser;
+  final user = ref.watch(currentUserProvider);
   if (user == null) return Stream.value([]);
   return FirestoreService(uid: user.uid).stream();
 });
@@ -106,7 +108,7 @@ final grandTotalProvider = Provider<double>((ref) {
 });
 
 // For mutations, we can use a class or just providers
-final expenseServiceProvider = Provider((ref) {
-  final user = FirebaseAuth.instance.currentUser;
+final expenseServiceProvider = Provider<FirestoreService?>((ref) {
+  final user = ref.watch(currentUserProvider);
   return user != null ? FirestoreService(uid: user.uid) : null;
 });

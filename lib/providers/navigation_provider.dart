@@ -43,6 +43,15 @@ class NavigationNotifier extends Notifier<NavigationState> {
     if (state.currentIndex == index) return;
     state = state.copyWith(currentIndex: index);
   }
+
+  void reset() {
+    if (state.pageController.hasClients) {
+      try {
+        state.pageController.jumpToPage(0);
+      } catch (_) {}
+    }
+    state = state.copyWith(currentIndex: 0);
+  }
 }
 
 final navigationProvider = NotifierProvider<NavigationNotifier, NavigationState>(
