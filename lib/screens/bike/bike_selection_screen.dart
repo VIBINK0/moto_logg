@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/routes/app_routes.dart';
 import '../../models/bike_model.dart';
 import '../../providers/bike_provider.dart';
+import '../../providers/expense_provider.dart';
 import '../../widgets/bike_carousel_item.dart';
 import '../../widgets/industrial_background.dart';
 
@@ -45,6 +46,10 @@ class BikeSelectionScreen extends ConsumerWidget {
       final selectedBike = bikes[currentIndex];
 
       final success = await provider.selectBike(selectedBike);
+
+      if (success) {
+        ref.read(expenseFilterProvider.notifier).setSelectedBikeName(selectedBike.name);
+      }
 
       if (success && context.mounted) {
         context.go(AppRoutes.dashboard);

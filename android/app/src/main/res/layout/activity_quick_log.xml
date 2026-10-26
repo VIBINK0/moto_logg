@@ -52,11 +52,48 @@
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Category Row First -->
+        <!-- Bike / Machine Selection Label -->
+        <TextView
+            android:id="@+id/tv_bike_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:letterSpacing="0.06"
+            android:text="MACHINE / BIKE"
+            android:textColor="#8E8E93"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <!-- Bike / Machine Selection Row (Dynamic from Owned / Preset Bikes) -->
+        <HorizontalScrollView
+            android:id="@+id/hsv_bike_selector"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:scrollbars="none">
+            <LinearLayout
+                android:id="@+id/ll_bike_container"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <!-- Category Label -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:letterSpacing="0.06"
+            android:text="CATEGORY"
+            android:textColor="#8E8E93"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <!-- Category Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="36dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="6dp"
             android:orientation="horizontal">
 
             <TextView

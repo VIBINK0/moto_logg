@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mileage_model.dart';
 import 'auth_provider.dart';
+import 'bike_provider.dart';
 
 class MileageState {
   final List<MileageRecord> records;
@@ -117,13 +118,16 @@ class MileageNotifier extends Notifier<MileageState> {
     required double odometerReading,
     required double fuelLiters,
     required double pricePerLiter,
+    String? bikeName,
   }) async {
+    final activeBike = bikeName ?? ref.read(bikeProvider).selectedBike?.name;
     final newRecord = MileageRecord(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       odometerReading: odometerReading,
       fuelLiters: fuelLiters,
       pricePerLiter: pricePerLiter,
       date: DateTime.now(),
+      bikeName: activeBike,
     );
     final updated = [newRecord, ...state.records];
     updated.sort((a, b) => b.date.compareTo(a.date));
@@ -152,3 +156,22 @@ class MileageNotifier extends Notifier<MileageState> {
 final mileageProvider = NotifierProvider<MileageNotifier, MileageState>(
   MileageNotifier.new,
 );
+
+/// MileageState scoped to the currently active bike
+final activeMileageStateProvider = Provider<MileageState>((ref) {
+  final baseState = ref.watch(mileageProvider);
+  final selectedBike = ref.watch(bikeProvider).selectedBike;
+
+  if (selectedBike == null) return baseState;
+
+  final bikeRecords = baseState.records.where((r) {
+    if (r.bikeName == null || r.bikeName!.isEmpty) return true; // allow legacy
+    return r.bikeName!.trim().toLowerCase() == selectedBike.name.trim().toLowerCase();
+  }).toList();
+
+  return MileageState(
+    records: bikeRecords,
+    isLoading: baseState.isLoading,
+  );
+});
+

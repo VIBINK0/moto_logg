@@ -39,6 +39,7 @@ class Expense {
   final double amount;
   final DateTime date;
   final String? notes;
+  final String? bikeName;
 
   const Expense({
     required this.id,
@@ -46,7 +47,26 @@ class Expense {
     required this.amount,
     required this.date,
     this.notes,
+    this.bikeName,
   });
+
+  Expense copyWith({
+    String? id,
+    ExpenseCategory? category,
+    double? amount,
+    DateTime? date,
+    String? notes,
+    String? bikeName,
+  }) {
+    return Expense(
+      id: id ?? this.id,
+      category: category ?? this.category,
+      amount: amount ?? this.amount,
+      date: date ?? this.date,
+      notes: notes ?? this.notes,
+      bikeName: bikeName ?? this.bikeName,
+    );
+  }
 
   factory Expense.fromFirestore(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
@@ -59,6 +79,7 @@ class Expense {
       amount: (d['amount'] as num).toDouble(),
       date: (d['date'] as Timestamp).toDate(),
       notes: d['notes'] as String?,
+      bikeName: d['bikeName'] as String? ?? d['bike'] as String?,
     );
   }
 
@@ -67,5 +88,6 @@ class Expense {
     'amount': amount,
     'date': Timestamp.fromDate(date),
     if (notes != null && notes!.isNotEmpty) 'notes': notes,
+    if (bikeName != null && bikeName!.isNotEmpty) 'bikeName': bikeName,
   };
 }

@@ -7,8 +7,11 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
+import '../../models/bike_model.dart';
 import '../../models/detected_transaction_model.dart';
 import '../../models/expense_model.dart';
+import '../../providers/bike_provider.dart';
+import '../../providers/expense_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/sms_transaction_service.dart';
 import '../../widgets/common/primary_button.dart';
@@ -18,6 +21,7 @@ class ExpenseConfirmState {
   final ExpenseCategory category;
   final String paymentMethod;
   final DateTime date;
+  final String? bikeName;
   final bool isSaving;
   final bool isDuplicate;
   final String? errorMessage;
@@ -26,6 +30,7 @@ class ExpenseConfirmState {
     required this.category,
     required this.paymentMethod,
     required this.date,
+    this.bikeName,
     this.isSaving = false,
     this.isDuplicate = false,
     this.errorMessage,
@@ -35,6 +40,7 @@ class ExpenseConfirmState {
     ExpenseCategory? category,
     String? paymentMethod,
     DateTime? date,
+    String? bikeName,
     bool? isSaving,
     bool? isDuplicate,
     String? errorMessage,
@@ -43,6 +49,7 @@ class ExpenseConfirmState {
       category: category ?? this.category,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       date: date ?? this.date,
+      bikeName: bikeName ?? this.bikeName,
       isSaving: isSaving ?? this.isSaving,
       isDuplicate: isDuplicate ?? this.isDuplicate,
       errorMessage: errorMessage,
@@ -53,22 +60,27 @@ class ExpenseConfirmState {
 class ExpenseConfirmNotifier extends Notifier<ExpenseConfirmState> {
   @override
   ExpenseConfirmState build() {
+    final currentBike = ref.read(bikeProvider).selectedBike;
     return ExpenseConfirmState(
       category: ExpenseCategory.fuel,
       paymentMethod: 'UPI',
       date: DateTime.now(),
+      bikeName: currentBike?.name ?? BikeModel.defaultBike.name,
     );
   }
 
   void initialize(DetectedTransaction tx) {
+    final currentBike = ref.read(bikeProvider).selectedBike;
     state = ExpenseConfirmState(
       category: _inferCategory(tx.merchant),
       paymentMethod: tx.paymentMethod ?? 'UPI',
       date: tx.transactionDate,
+      bikeName: currentBike?.name ?? BikeModel.defaultBike.name,
     );
   }
 
   void setCategory(ExpenseCategory cat) => state = state.copyWith(category: cat);
+  void setBikeName(String bike) => state = state.copyWith(bikeName: bike);
   void setPaymentMethod(String method) => state = state.copyWith(paymentMethod: method);
   void setDate(DateTime dt) => state = state.copyWith(date: dt);
   void setSaving(bool saving) => state = state.copyWith(isSaving: saving);
@@ -184,13 +196,21 @@ class _ExpenseConfirmationScreenState extends ConsumerState<ExpenseConfirmationS
 
     try {
       final service = FirestoreService(uid: user.uid);
+      final currentBike = ref.read(bikeProvider).selectedBike;
+      final chosenBikeName = formState.bikeName ?? currentBike?.name ?? BikeModel.defaultBike.name;
       final expense = tx.toExpense(
         category: formState.category,
         customNotes: _notesController.text.trim(),
+        bikeName: chosenBikeName,
       );
 
       await service.add(expense);
       formNotifier.setSaving(false);
+
+      final matchedBike = BikeModel.findByName(chosenBikeName);
+      if (matchedBike != null) {
+        ref.read(bikeProvider.notifier).selectBike(matchedBike);
+      }
 
       // Clear the detected transaction from service state
       ref.read(smsTransactionProvider.notifier).clearTransaction();
@@ -440,7 +460,49 @@ class _ExpenseConfirmationScreenState extends ConsumerState<ExpenseConfirmationS
                 ).animate().shake(),
               ],
 
-              const SizedBox(height: 28),
+              // Machine / Bike Selector (Multi-bike only)
+              if (ref.watch(selectableBikesProvider).length > 1) ...[
+                const SizedBox(height: 28),
+                _SectionLabel(title: 'MACHINE / BIKE'),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: ref.watch(selectableBikesProvider).map((b) {
+                      final isSelected = b.name.toLowerCase() == (formState.bikeName ?? '').toLowerCase();
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(b.name),
+                          selected: isSelected,
+                          onSelected: (val) {
+                            if (val) formNotifier.setBikeName(b.name);
+                          },
+                          selectedColor: AppColors.accent,
+                          backgroundColor: AppColors.surfaceLight,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.black : AppColors.textPrimary,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          avatar: Icon(
+                            Icons.two_wheeler_rounded,
+                            size: 16,
+                            color: isSelected ? Colors.black : AppColors.textSecondary,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                              color: isSelected ? AppColors.accent : AppColors.border,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
 
               // Category Selector
               _SectionLabel(title: 'CATEGORY'),

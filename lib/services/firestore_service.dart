@@ -21,6 +21,35 @@ class FirestoreService {
   Future<void> update(Expense e) => _col.doc(e.id).update(e.toMap());
   Future<void> delete(String id) => _col.doc(id).delete();
 
+  /// Updates all existing expenses that don't have a bikeName assigned.
+  /// If [updateAll] is true, updates every expense in the collection to [bikeName].
+  Future<int> assignBikeToLegacyExpenses(String bikeName, {bool updateAll = false}) async {
+    final snapshot = await _col.get();
+    int count = 0;
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+    int batchCount = 0;
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final existingBike = data['bikeName'] as String? ?? data['bike'] as String?;
+      if (updateAll || existingBike == null || existingBike.trim().isEmpty) {
+        batch.update(doc.reference, {'bikeName': bikeName});
+        count++;
+        batchCount++;
+        if (batchCount >= 400) {
+          await batch.commit();
+          batch = FirebaseFirestore.instance.batch();
+          batchCount = 0;
+        }
+      }
+    }
+
+    if (batchCount > 0) {
+      await batch.commit();
+    }
+    return count;
+  }
+
   /// Checks whether an expense with the given transactionId or amount+date already exists.
   Future<bool> hasDuplicateExpense({
     String? transactionId,

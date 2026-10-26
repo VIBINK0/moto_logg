@@ -1,6 +1,7 @@
 package com.example.expanse_tracker
 
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
@@ -23,7 +24,10 @@ import android.widget.Toast
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import android.widget.LinearLayout
+import org.json.JSONArray
 import java.util.Date
+import java.util.Locale
 
 class QuickLogActivity : Activity() {
 
@@ -33,9 +37,22 @@ class QuickLogActivity : Activity() {
         const val CATEGORY_SERVICE = "service"
         const val CATEGORY_ACCESSORIES = "accessories"
         const val CATEGORY_MODIFICATIONS = "modifications"
+
+        val DEFAULT_PRESET_BIKES = listOf(
+            "Kawasaki Ninja 300",
+            "Yamaha MT-15",
+            "KTM Duke 390",
+            "Royal Enfield Hunter 350",
+            "Yamaha R15 V4",
+            "Bajaj Pulsar NS200",
+            "TVS Apache RTR 200 4V",
+            "Honda CB350RS"
+        )
     }
 
     private var selectedCategory: String = CATEGORY_FUEL
+    private var selectedBike: String = "Kawasaki Ninja 300"
+    private var ownedBikes: List<String> = emptyList()
 
     private lateinit var etQuickInput: EditText
     private lateinit var tvParsePreview: TextView
@@ -44,20 +61,54 @@ class QuickLogActivity : Activity() {
     private lateinit var pbUploadLoading: ProgressBar
     private lateinit var btnClose: TextView
 
+    private lateinit var tvBikeLabel: TextView
+    private lateinit var hsvBikeSelector: View
+    private lateinit var llBikeContainer: LinearLayout
+
     private lateinit var btnCatFuel: TextView
     private lateinit var btnCatService: TextView
     private lateinit var btnCatAccessories: TextView
     private lateinit var btnCatModifications: TextView
+
+    private var notificationId: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_quick_log)
 
         initViews()
+        parseIncomingIntent()
+        setupBikeSelection()
         setupCategorySelection()
         setupInputParsing()
         setupActions()
         autoFocusInput()
+    }
+
+    private fun parseIncomingIntent() {
+        val extraAmount = intent.getDoubleExtra(NotificationHelper.EXTRA_AMOUNT, 0.0)
+        val extraMerchant = intent.getStringExtra(NotificationHelper.EXTRA_MERCHANT)
+        val extraBike = intent.getStringExtra(NotificationHelper.EXTRA_BIKE_NAME)
+        val extraCategory = intent.getStringExtra(NotificationHelper.EXTRA_CATEGORY)
+        notificationId = intent.getIntExtra(NotificationHelper.EXTRA_NOTIFICATION_ID, 0)
+
+        if (!extraBike.isNullOrBlank()) {
+            selectedBike = extraBike
+        }
+        if (!extraCategory.isNullOrBlank()) {
+            selectedCategory = extraCategory
+        }
+
+        if (extraAmount > 0.0) {
+            val formatted = if (extraAmount % 1.0 == 0.0) {
+                extraAmount.toInt().toString()
+            } else {
+                String.format(Locale.ENGLISH, "%.2f", extraAmount)
+            }
+            val notePart = if (!extraMerchant.isNullOrBlank()) " $extraMerchant" else ""
+            etQuickInput.setText("$formatted$notePart")
+            etQuickInput.setSelection(etQuickInput.text.length)
+        }
     }
 
     private fun initViews() {
@@ -67,6 +118,10 @@ class QuickLogActivity : Activity() {
         ivUploadIcon = findViewById(R.id.iv_upload_icon)
         pbUploadLoading = findViewById(R.id.pb_upload_loading)
         btnClose = findViewById(R.id.btn_close)
+
+        tvBikeLabel = findViewById(R.id.tv_bike_label)
+        hsvBikeSelector = findViewById(R.id.hsv_bike_selector)
+        llBikeContainer = findViewById(R.id.ll_bike_container)
 
         btnCatFuel = findViewById(R.id.btn_cat_fuel)
         btnCatService = findViewById(R.id.btn_cat_service)
@@ -85,6 +140,117 @@ class QuickLogActivity : Activity() {
         }
     }
 
+    private fun setupBikeSelection() {
+        val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val activeBike = prefs.getString("flutter.selected_bike_name", null)
+            ?: prefs.getString("selected_bike_name", null)
+            ?: "Kawasaki Ninja 300"
+
+        val rawJson = prefs.getString("flutter.user_owned_bikes_json", null)
+            ?: prefs.getString("user_owned_bikes_json", null)
+
+        val parsedOwned = mutableListOf<String>()
+        if (!rawJson.isNullOrBlank()) {
+            try {
+                val array = JSONArray(rawJson)
+                for (i in 0 until array.length()) {
+                    val name = array.optString(i)?.trim()
+                    if (!name.isNullOrEmpty() && !parsedOwned.contains(name)) {
+                        parsedOwned.add(name)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error parsing user owned bikes JSON", e)
+            }
+        }
+
+        // Also check string set in case it was stored as StringSet
+        if (parsedOwned.isEmpty()) {
+            val stringSet = prefs.getStringSet("flutter.user_owned_bikes", null)
+                ?: prefs.getStringSet("user_owned_bikes", null)
+            if (!stringSet.isNullOrEmpty()) {
+                parsedOwned.addAll(stringSet)
+            }
+        }
+
+        val bikes = if (parsedOwned.isNotEmpty()) {
+            parsedOwned
+        } else if (activeBike.isNotBlank()) {
+            mutableListOf(activeBike)
+        } else {
+            mutableListOf("Kawasaki Ninja 300")
+        }
+
+        ownedBikes = bikes
+        selectedBike = if (bikes.any { it.equals(activeBike, ignoreCase = true) }) {
+            bikes.first { it.equals(activeBike, ignoreCase = true) }
+        } else {
+            bikes.first()
+        }
+
+        // If the user only has 1 bike in their garage, hide the entire machine selector
+        if (bikes.size <= 1) {
+            tvBikeLabel.visibility = View.GONE
+            hsvBikeSelector.visibility = View.GONE
+            return
+        }
+
+        tvBikeLabel.visibility = View.VISIBLE
+        hsvBikeSelector.visibility = View.VISIBLE
+        llBikeContainer.removeAllViews()
+
+        for (bike in bikes) {
+            val tv = TextView(this).apply {
+                text = "🏍️ $bike"
+                textSize = 12f
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                gravity = android.view.Gravity.CENTER
+                setPadding(dpToPx(12), dpToPx(4), dpToPx(12), dpToPx(4))
+                val params = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                ).apply {
+                    marginEnd = dpToPx(6)
+                }
+                layoutParams = params
+                isClickable = true
+                isFocusable = true
+                setOnClickListener {
+                    selectedBike = bike
+                    updateBikePills()
+                    triggerHapticFeedback()
+                    getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString("flutter.selected_bike_name", selectedBike)
+                        .apply()
+                    updateLivePreview()
+                }
+            }
+            llBikeContainer.addView(tv)
+        }
+
+        updateBikePills()
+    }
+
+    private fun updateBikePills() {
+        for (i in 0 until llBikeContainer.childCount) {
+            val view = llBikeContainer.getChildAt(i) as? TextView ?: continue
+            val bikeName = ownedBikes.getOrNull(i) ?: continue
+            val isSelected = bikeName.equals(selectedBike, ignoreCase = true)
+            if (isSelected) {
+                view.setBackgroundResource(R.drawable.bg_chip_selected)
+                view.setTextColor(0xFF000000.toInt())
+            } else {
+                view.setBackgroundResource(R.drawable.bg_chip_unselected)
+                view.setTextColor(0xFFD1D1D6.toInt())
+            }
+        }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
+    }
+
     private fun setupCategorySelection() {
         val categories = listOf(
             Triple(btnCatFuel, CATEGORY_FUEL, "⛽ Fuel"),
@@ -97,6 +263,8 @@ class QuickLogActivity : Activity() {
             view.setOnClickListener {
                 selectedCategory = categoryKey
                 updateCategoryPills()
+                triggerHapticFeedback()
+                updateLivePreview()
             }
         }
 
@@ -128,25 +296,7 @@ class QuickLogActivity : Activity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                val (amount, note) = parseInput(s?.toString() ?: "")
-                if (amount != null) {
-                    val formatted = if (amount % 1.0 == 0.0) {
-                        amount.toInt().toString()
-                    } else {
-                        String.format("%.2f", amount)
-                    }
-
-                    if (!note.isNullOrBlank()) {
-                        tvParsePreview.text = "₹$formatted  •  Note: $note"
-                        tvParsePreview.setTextColor(0xFFFFFFFF.toInt())
-                    } else {
-                        tvParsePreview.text = "₹$formatted  (add space to add a note)"
-                        tvParsePreview.setTextColor(0xFFE5E5EA.toInt())
-                    }
-                } else {
-                    tvParsePreview.text = "e.g. 250 Indian Oil (Amount + Note)"
-                    tvParsePreview.setTextColor(0xFF8E8E93.toInt())
-                }
+                updateLivePreview()
             }
         })
 
@@ -160,6 +310,34 @@ class QuickLogActivity : Activity() {
             } else {
                 false
             }
+        }
+
+        updateLivePreview()
+    }
+
+    private fun updateLivePreview() {
+        val (amount, note) = parseInput(etQuickInput.text?.toString() ?: "")
+        val catEmoji = when (selectedCategory) {
+            CATEGORY_FUEL -> "⛽ Fuel"
+            CATEGORY_SERVICE -> "🔧 Service"
+            CATEGORY_ACCESSORIES -> "🪖 Acc"
+            CATEGORY_MODIFICATIONS -> "⚡ Mods"
+            else -> "💰 Other"
+        }
+
+        if (amount != null) {
+            val formatted = if (amount % 1.0 == 0.0) {
+                amount.toInt().toString()
+            } else {
+                String.format("%.2f", amount)
+            }
+
+            val notePart = if (!note.isNullOrBlank()) "  •  $note" else ""
+            tvParsePreview.text = "₹$formatted  •  $catEmoji  •  🏍️ $selectedBike$notePart"
+            tvParsePreview.setTextColor(0xFFFFFFFF.toInt())
+        } else {
+            tvParsePreview.text = "e.g. 250 Indian Oil  ($catEmoji • 🏍️ $selectedBike)"
+            tvParsePreview.setTextColor(0xFF8E8E93.toInt())
         }
     }
 
@@ -231,7 +409,8 @@ class QuickLogActivity : Activity() {
             "category" to selectedCategory,
             "amount" to amount,
             "date" to Timestamp(Date()),
-            "notes" to note
+            "notes" to note,
+            "bikeName" to selectedBike
         )
 
         FirebaseFirestore.getInstance()
@@ -249,9 +428,15 @@ class QuickLogActivity : Activity() {
                 val noteTag = if (!note.isNullOrBlank()) " • $note" else ""
                 Toast.makeText(
                     applicationContext,
-                    "✅ ₹$formattedAmount saved ($selectedCategory)$noteTag",
+                    "✅ ₹$formattedAmount saved ($selectedCategory) for $selectedBike$noteTag",
                     Toast.LENGTH_SHORT
                 ).show()
+
+                if (notificationId != 0) {
+                    val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                    nm?.cancel(notificationId)
+                    NotificationHelper.clearPendingTransaction(applicationContext)
+                }
 
                 hideKeyboard()
                 finish()

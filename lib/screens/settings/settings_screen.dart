@@ -7,6 +7,7 @@ import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/common/settings_tile.dart';
+import '../../widgets/sheets/bike_switcher_sheet.dart';
 import '../../widgets/sheets/sms_detection_settings_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -84,48 +85,50 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
 
-             GestureDetector(
-               onTap: (){
-                 context.push(AppRoutes.bikeSettings);
-               },
-               child: SettingsTile(
+            SettingsTile(
+              onTap: () => context.push(AppRoutes.manageGarage),
+              icon: Icons.garage_rounded,
+              title: 'My Garage (Select Bikes)',
+              subtitle: bikeState.ownedBikeNames.isEmpty
+                  ? 'Select the bikes you own'
+                  : '${bikeState.ownedBikeNames.length} machine${bikeState.ownedBikeNames.length > 1 ? "s" : ""} in garage',
+            ),
+            if (bikeState.hasMultipleBikes)
+              SettingsTile(
+                onTap: () => BikeSwitcherSheet.show(context),
                 icon: Icons.directions_bike_rounded,
-                title: 'Change Bike',
-                subtitle: '${bikeState.selectedBike?.brandName ?? ""} ${bikeState.selectedBike?.name ?? ""}'.trim().isEmpty ? 'No bike selected' : '${bikeState.selectedBike?.brandName} ${bikeState.selectedBike?.name}',
-               ),
-             ),
-            GestureDetector(
+                title: 'Change Active Bike',
+                subtitle: '${bikeState.selectedBike?.brandName ?? ""} ${bikeState.selectedBike?.name ?? ""}'.trim().isEmpty
+                    ? 'No bike selected'
+                    : 'Active: ${bikeState.selectedBike?.brandName} ${bikeState.selectedBike?.name}',
+              ),
+            SettingsTile(
               onTap: () => context.push(AppRoutes.mileageTracker),
-              child: const SettingsTile(
-                icon: Icons.speed_rounded,
-                title: 'Mileage Tracker',
-                subtitle: 'Compare fuel records & calculate efficiency',
-              ),
+              icon: Icons.speed_rounded,
+              title: 'Mileage Tracker',
+              subtitle: 'Compare fuel records & calculate efficiency',
             ),
-            GestureDetector(
-              onTap: () {
-                SmsDetectionSettingsSheet.show(context);
-              },
-              child: const SettingsTile(
-                icon: Icons.sms_rounded,
-                title: 'SMS Expense Detection',
-                subtitle: 'Auto-detect alerts & manage background sync',
-              ),
+            SettingsTile(
+              onTap: () => SmsDetectionSettingsSheet.show(context),
+              icon: Icons.sms_rounded,
+              title: 'SMS Expense Detection',
+              subtitle: 'Auto-detect alerts & manage background sync',
             ),
-            GestureDetector(
+            SettingsTile(
               onTap: () => context.push(AppRoutes.featureOverview),
-              child: const SettingsTile(
-                icon: Icons.auto_awesome_rounded,
-                title: 'App Features & Guide',
-                subtitle: 'Overview of smart SMS, garage & mileage tracking',
-              ),
+              icon: Icons.auto_awesome_rounded,
+              title: 'App Features & Guide',
+              subtitle: 'Overview of smart SMS, garage & mileage tracking',
             ),
             const SettingsTile(
               icon: Icons.notifications_rounded,
               title: 'Notifications',
               subtitle: 'Enabled',
             ),
-            GestureDetector(
+            SettingsTile(
+              icon: Icons.delete_sweep_rounded,
+              title: 'Clear All Data',
+              subtitle: 'Permanently remove all expenses',
               onTap: () async {
                 final confirm = await showDialog<bool>(
                   context: context,
@@ -164,11 +167,6 @@ class SettingsScreen extends ConsumerWidget {
                   );
                 }
               },
-              child: const SettingsTile(
-                icon: Icons.delete_sweep_rounded,
-                title: 'Clear All Data',
-                subtitle: 'Permanently remove all expenses',
-              ),
             ),
             const SettingsTile(
               icon: Icons.info_outline_rounded,

@@ -22,6 +22,7 @@ object NotificationHelper {
     const val EXTRA_CATEGORY = "extra_category"
     const val EXTRA_KEY_NOTE = "extra_key_note"
     const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
+    const val EXTRA_BIKE_NAME = "bikeName"
 
     const val EXTRA_IS_DETECTED_EXPENSE = "is_detected_expense"
     const val EXTRA_AMOUNT = "amount"
@@ -80,17 +81,61 @@ object NotificationHelper {
         val merchantName = transaction.merchant?.takeIf { it.isNotBlank() } ?: "Bank Expense"
         val formattedAmount = String.format(Locale.ENGLISH, "₹%.2f", transaction.amount)
 
-        // RemoteInput with clean label and merchantName as choice that edits before sending
+        // Read active bike and owned fleet from SharedPreferences
+        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val activeBike = prefs.getString("flutter.selected_bike_name", null) ?: "Kawasaki Ninja 300"
+        val rawJson = prefs.getString("flutter.user_owned_bikes_json", null)
+        val ownedBikes = mutableListOf<String>()
+        if (!rawJson.isNullOrBlank()) {
+            try {
+                val array = org.json.JSONArray(rawJson)
+                for (i in 0 until array.length()) {
+                    val name = array.optString(i)?.trim()
+                    if (!name.isNullOrEmpty()) ownedBikes.add(name)
+                }
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+        if (ownedBikes.isEmpty()) {
+            ownedBikes.add(activeBike)
+        }
+
+        // Action 1: "⚡ Quick Log" opens floating QuickLogActivity with amount, notes, and bike/category selectors
+        val quickLogIntent = Intent(context, QuickLogActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_AMOUNT, transaction.amount)
+            putExtra(EXTRA_MERCHANT, transaction.merchant)
+            putExtra(EXTRA_PAYMENT_METHOD, transaction.paymentMethod)
+            putExtra(EXTRA_TRANSACTION_ID, transaction.transactionId)
+            putExtra(EXTRA_TRANSACTION_DATE, transaction.transactionDate.time)
+            putExtra(EXTRA_RAW_BODY, transaction.rawBody)
+            putExtra(EXTRA_SENDER, transaction.sender)
+            putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(EXTRA_BIKE_NAME, activeBike)
+        }
+        val quickLogPendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId * 10 + 9,
+            quickLogIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val quickLogAction = NotificationCompat.Action.Builder(
+            0,
+            "⚡ Quick Log",
+            quickLogPendingIntent
+        ).build()
+
+        // Clean RemoteInput for notes ONLY (do NOT call setChoices, which causes Android to auto-submit on chip click)
         val remoteInput = RemoteInput.Builder(EXTRA_KEY_NOTE)
-            .setLabel("Go on, justify spending at $merchantName...")
+            .setLabel("Notes (optional, e.g. Speed / Shell)")
             .setAllowFreeFormInput(true)
             .build()
 
-        // Category action buttons displayed at bottom of notification
+        // Quick Category Actions: ⛽ Fuel and 🛠️ Service
         val categories = listOf(
             Triple("fuel", "⛽ Fuel", 1),
-            Triple("service", "🛠️ Service", 2),
-            Triple("acc_or_mods", "🧩 Acc/Mods", 3)
+            Triple("service", "🛠️ Service", 2)
         )
 
         val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or
@@ -100,6 +145,7 @@ object NotificationHelper {
             val actionIntent = Intent(context, ExpenseActionReceiver::class.java).apply {
                 action = ACTION_SAVE_EXPENSE
                 putExtra(EXTRA_CATEGORY, catKey)
+                putExtra(EXTRA_BIKE_NAME, activeBike)
                 putExtra(EXTRA_NOTIFICATION_ID, notificationId)
                 putExtra(EXTRA_AMOUNT, transaction.amount)
                 putExtra(EXTRA_MERCHANT, transaction.merchant)
@@ -133,20 +179,20 @@ object NotificationHelper {
 
         val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconRes)
-            .setContentTitle("💸 Expense detected")
+            .setContentTitle("💸 Expense detected • 🏍️ $activeBike")
             .setContentText("$formattedAmount spent at $merchantName")
-            .setSubText("Select category to log")
+            .setSubText("Machine: $activeBike")
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("$formattedAmount spent at $merchantName via ${transaction.paymentMethod ?: "Bank"}\nSelect a category below to log with prefilled notes.")
+                    .bigText("$formattedAmount spent at $merchantName via ${transaction.paymentMethod ?: "Bank"}\nMachine: 🏍️ $activeBike\nTap 'Quick Log' to choose bike & category, or log directly below.")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
-            .setOngoing(true) // Persistent until user logs an expense
-            .setAutoCancel(false)
+            .setOngoing(false)
+            .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .addAction(quickLogAction)
 
-        // Add ONLY category actions to bottom action row
         for (action in categoryActions) {
             notificationBuilder.addAction(action)
         }

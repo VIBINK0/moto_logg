@@ -65,7 +65,37 @@ class ExpenseActionReceiver : BroadcastReceiver() {
             else -> rawCategory
         }
 
-        Log.i(TAG, "Saving expense from notification: amount=₹$amount, category=$resolvedCategory, notes=$finalNotes")
+        // Read passed bike or active bike from preferences
+        val passedBikeName = intent.getStringExtra(NotificationHelper.EXTRA_BIKE_NAME)
+        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val activeBike = prefs.getString("flutter.selected_bike_name", null)
+        val rawJson = prefs.getString("flutter.user_owned_bikes_json", null)
+        val ownedBikes = mutableListOf<String>()
+        if (!rawJson.isNullOrBlank()) {
+            try {
+                val array = org.json.JSONArray(rawJson)
+                for (i in 0 until array.length()) {
+                    val name = array.optString(i)?.trim()
+                    if (!name.isNullOrEmpty()) ownedBikes.add(name)
+                }
+            } catch (_: Exception) {}
+        }
+
+        var resolvedBikeName: String = passedBikeName ?: activeBike ?: "Kawasaki Ninja 300"
+        var cleanNotes = finalNotes
+
+        // If the user selected/entered one of their owned machines from the choice chips
+        if (!rawInput.isNullOrBlank()) {
+            for (owned in ownedBikes) {
+                if (rawInput.equals(owned, ignoreCase = true)) {
+                    resolvedBikeName = owned
+                    cleanNotes = merchant?.takeIf { it.isNotBlank() }
+                    break
+                }
+            }
+        }
+
+        Log.i(TAG, "Saving expense from notification: amount=₹$amount, category=$resolvedCategory, machine=$resolvedBikeName, notes=$cleanNotes")
 
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
@@ -84,7 +114,8 @@ class ExpenseActionReceiver : BroadcastReceiver() {
             "category" to resolvedCategory,
             "amount" to amount,
             "date" to Timestamp(Date(transactionDate)),
-            "notes" to finalNotes
+            "notes" to cleanNotes,
+            "bikeName" to resolvedBikeName
         )
 
         FirebaseFirestore.getInstance()
@@ -113,7 +144,7 @@ class ExpenseActionReceiver : BroadcastReceiver() {
                     context,
                     notificationId,
                     "✅ Expense Logged",
-                    "$formattedAmount logged as $displayCategoryLabel" + (if (finalNotes != null) " • \"$finalNotes\"" else "")
+                    "$formattedAmount logged for $resolvedBikeName ($displayCategoryLabel)" + (if (cleanNotes != null) " • \"$cleanNotes\"" else "")
                 )
             }
             .addOnFailureListener { e ->

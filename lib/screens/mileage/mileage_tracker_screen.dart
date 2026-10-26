@@ -2,26 +2,43 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import '../../providers/bike_provider.dart';
 import '../../providers/mileage_provider.dart';
 import '../../widgets/sheets/add_mileage_sheet.dart';
 
-class MileageTrackerScreen extends StatelessWidget {
+class MileageTrackerScreen extends ConsumerWidget {
   const MileageTrackerScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bikeState = ref.watch(bikeProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
         elevation: 0,
-        title: const Text(
-          'Mileage Tracker',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Mileage Tracker',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (bikeState.selectedBike != null)
+              Text(
+                bikeState.selectedBike!.name,
+                style: const TextStyle(
+                  color: Color(0xFF00FF88),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+          ],
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
@@ -65,7 +82,7 @@ class _AverageMileageCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mileage = ref.watch(mileageProvider);
+    final mileage = ref.watch(activeMileageStateProvider);
     final records = mileage.records;
     
     // Only show average if there are more than 2 records (at least 2 comparisons)
@@ -198,7 +215,7 @@ class _MileageHistoryList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mileage = ref.watch(mileageProvider);
+    final mileage = ref.watch(activeMileageStateProvider);
     final comparisons = mileage.comparisons;
 
     if (mileage.isLoading) {

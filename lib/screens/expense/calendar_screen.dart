@@ -4,6 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/expense_model.dart';
+import '../../providers/bike_provider.dart';
 import '../../providers/expense_provider.dart';
 import '../../widgets/common/expense_tile.dart';
 import '../../widgets/sheets/edit_expense_sheet.dart';
@@ -30,6 +31,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final expenseAsync = ref.watch(expensesStreamProvider);
+    final bikeExpenses = ref.watch(expensesForSelectedBikeProvider);
+    final bikeState = ref.watch(bikeProvider);
+    final filter = ref.watch(expenseFilterProvider);
+
+    final activeMachine = filter.selectedBikeName == 'All'
+        ? 'All Machines'
+        : (filter.selectedBikeName ?? bikeState.selectedBike?.name ?? 'Machine');
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -44,13 +52,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Expense Calendar',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Expense Calendar',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              activeMachine,
+              style: const TextStyle(
+                color: Color(0xFF00FF88),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
       body: expenseAsync.when(
@@ -66,10 +87,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             style: TextStyle(color: AppColors.textSecondary),
           ),
         ),
-        data: (allExpenses) {
-          final expensesByDay = _groupExpensesByDay(allExpenses);
+        data: (_) {
+          final expensesByDay = _groupExpensesByDay(bikeExpenses);
 
-          final selectedExpenses = allExpenses
+          final selectedExpenses = bikeExpenses
               .where((e) => isSameDay(e.date, _selectedDay))
               .toList();
 

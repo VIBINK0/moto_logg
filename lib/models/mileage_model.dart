@@ -4,6 +4,7 @@ class MileageRecord {
   final double fuelLiters;
   final double pricePerLiter;
   final DateTime date;
+  final String? bikeName;
 
   MileageRecord({
     required this.id,
@@ -11,6 +12,7 @@ class MileageRecord {
     required this.fuelLiters,
     required this.pricePerLiter,
     required this.date,
+    this.bikeName,
   });
 
   double get totalCost => fuelLiters * pricePerLiter;
@@ -21,6 +23,7 @@ class MileageRecord {
         'fuelLiters': fuelLiters,
         'pricePerLiter': pricePerLiter,
         'date': date.toIso8601String(),
+        'bikeName': bikeName,
       };
 
   factory MileageRecord.fromJson(Map<String, dynamic> json) => MileageRecord(
@@ -29,6 +32,7 @@ class MileageRecord {
         fuelLiters: (json['fuelLiters'] as num).toDouble(),
         pricePerLiter: (json['pricePerLiter'] as num).toDouble(),
         date: DateTime.parse(json['date']),
+        bikeName: json['bikeName'] as String?,
       );
 }
 

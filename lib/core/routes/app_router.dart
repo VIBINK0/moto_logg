@@ -3,6 +3,8 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../models/detected_transaction_model.dart';
 import '../../screens/bike/bike_selection_screen.dart';
 import '../../screens/bike/bike_settings_screen.dart';
+import '../../screens/bike/legacy_bike_migration_screen.dart';
+import '../../screens/bike/manage_garage_screen.dart';
 import '../../screens/expense/calendar_screen.dart';
 import '../../screens/expense/expense_confirmation_screen.dart';
 import '../../screens/mileage/mileage_tracker_screen.dart';
@@ -37,6 +39,11 @@ class AppRouter {
         builder: (context, state) => const BikeSelectionScreen(),
       ),
       GoRoute(
+        path: AppRoutes.legacyBikeMigration,
+        name: 'legacy-bike-migration',
+        builder: (context, state) => const LegacyBikeMigrationScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.dashboard,
         name: 'home',
         builder: (context, state) => const BikeCheckWrapper(
@@ -47,6 +54,11 @@ class AppRouter {
         path: AppRoutes.bikeSettings,
         name: 'bike-settings',
         builder: (context, state) => const BikeSettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.manageGarage,
+        name: 'manage-garage',
+        builder: (context, state) => const ManageGarageScreen(),
       ),
       GoRoute(
         path: AppRoutes.calendar,

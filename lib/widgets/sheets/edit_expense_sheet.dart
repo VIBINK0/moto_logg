@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/bike_model.dart';
 import '../../models/expense_model.dart';
+import '../../providers/bike_provider.dart';
 import '../../providers/expense_provider.dart';
 import '../common/primary_button.dart';
 
@@ -20,6 +22,7 @@ class _EditExpenseSheetState extends ConsumerState<EditExpenseSheet> {
   late final TextEditingController _noteController;
   late ExpenseCategory _selectedCategory;
   late DateTime _selectedDate;
+  late String _selectedBikeName;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -32,6 +35,8 @@ class _EditExpenseSheetState extends ConsumerState<EditExpenseSheet> {
     _noteController = TextEditingController(text: widget.expense.notes ?? '');
     _selectedCategory = widget.expense.category;
     _selectedDate = widget.expense.date;
+    final currentBike = ref.read(bikeProvider).selectedBike;
+    _selectedBikeName = widget.expense.bikeName ?? currentBike?.name ?? BikeModel.defaultBike.name;
   }
 
   @override
@@ -69,9 +74,16 @@ class _EditExpenseSheetState extends ConsumerState<EditExpenseSheet> {
         amount: amount,
         date: _selectedDate,
         notes: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+        bikeName: _selectedBikeName,
       );
 
       await service.update(updatedExpense);
+
+      // Also ensure active bike is aligned with the chosen bike
+      final matchedBike = BikeModel.findByName(_selectedBikeName);
+      if (matchedBike != null) {
+        ref.read(bikeProvider.notifier).selectBike(matchedBike);
+      }
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -100,33 +112,34 @@ class _EditExpenseSheetState extends ConsumerState<EditExpenseSheet> {
           borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: AppColors.border),
         ),
-        title: const Row(
-          children: [
-            Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 24),
-            SizedBox(width: 8),
-            Text('Delete Expense?', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-          ],
+        title: const Text(
+          "Delete this expense?",
+          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
         content: const Text(
-          'Are you sure you want to delete this expense log? This action cannot be undone.',
+          "This will permanently delete this expense from your records.",
           style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textDim)),
+            child: const Text("CANCEL", style: TextStyle(color: AppColors.textDim)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            child: const Text("DELETE", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
 
-    if (confirm != true || !mounted) return;
+    if (confirm != true) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
       final service = ref.read(expenseServiceProvider);
       await service?.delete(widget.expense.id);
@@ -187,6 +200,31 @@ class _EditExpenseSheetState extends ConsumerState<EditExpenseSheet> {
             ),
             const SizedBox(height: 20),
 
+            // Machine / Bike Selector (Multi-bike only)
+            if (ref.watch(selectableBikesProvider).length > 1) ...[
+              _Label('MACHINE / BIKE'),
+              const SizedBox(height: 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: ref.watch(selectableBikesProvider).map((b) {
+                    final isSelected = b.name.toLowerCase() == _selectedBikeName.toLowerCase();
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(b.name),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          if (val) setState(() => _selectedBikeName = b.name);
+                        },
+                        avatar: const Icon(Icons.two_wheeler_rounded, size: 16),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
             _Label('CATEGORY'),
             const SizedBox(height: 10),
             SingleChildScrollView(

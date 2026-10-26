@@ -3,9 +3,11 @@ class AppRoutes {
   static const String login = '/auth/login';
   static const String featureOverview = '/onboarding/features';
   static const String bikeSelection = '/onboarding/select-bike';
+  static const String legacyBikeMigration = '/onboarding/legacy-bike-migration';
   static const String dashboard = '/home';
   static const String bikeSettings = '/settings/bike';
   static const String calendar = '/expenses/calendar';
   static const String mileageTracker = '/expenses/mileage';
   static const String expenseConfirm = '/expenses/confirm';
+  static const String manageGarage = '/settings/my-bikes';
 }

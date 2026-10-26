@@ -68,4 +68,25 @@ class BikeModel {
       brandName: 'Yamaha',
     ),
   ];
+
+  static BikeModel get defaultBike => availableBikes.first;
+
+  /// Find an available bike by its name, id, or brand name
+  static BikeModel? findByName(String? name) {
+    if (name == null || name.trim().isEmpty) return null;
+    final clean = name.trim().toLowerCase();
+    for (final b in availableBikes) {
+      if (b.name.toLowerCase() == clean ||
+          b.id.toLowerCase() == clean ||
+          '${b.brandName} ${b.name}'.toLowerCase() == clean) {
+        return b;
+      }
+    }
+    for (final b in availableBikes) {
+      if (clean.contains(b.name.toLowerCase()) || b.name.toLowerCase().contains(clean)) {
+        return b;
+      }
+    }
+    return null;
+  }
 }

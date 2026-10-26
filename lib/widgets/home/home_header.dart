@@ -6,6 +6,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/bike_provider.dart';
+import '../../providers/expense_provider.dart';
+import '../sheets/bike_switcher_sheet.dart';
 
 class HomeHeader extends ConsumerWidget {
   const HomeHeader({super.key});
@@ -41,12 +43,34 @@ class HomeHeader extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Managing ${bikeState.selectedBike?.name ?? 'your bike'}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                if (ref.watch(selectableBikesProvider).length > 1)
+                  GestureDetector(
+                    onTap: () => BikeSwitcherSheet.show(context),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Managing ${bikeState.selectedBike?.name ?? 'your bike'}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.textSecondary,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Text(
+                    'Managing ${bikeState.selectedBike?.name ?? 'your machine'}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/expense_provider.dart';
 import '../../widgets/home/home_header.dart';
+import '../../widgets/home/quick_bike_selector.dart';
 import '../../widgets/home/total_expense_card.dart';
 import '../../widgets/home/bike_section.dart';
 
@@ -28,7 +29,9 @@ class HomeScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const HomeHeader(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
+                  const QuickBikeSelector(),
+                  const SizedBox(height: 18),
                   TotalExpenseCard(grand: grandTotal),
                   const SizedBox(height: 8),
                   BikeSection(totals: totals)

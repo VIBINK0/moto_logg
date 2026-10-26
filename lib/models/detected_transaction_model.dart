@@ -55,6 +55,7 @@ class DetectedTransaction {
   Expense toExpense({
     required ExpenseCategory category,
     String? customNotes,
+    String? bikeName,
   }) {
     final noteParts = <String>[];
     if (merchant != null && merchant!.isNotEmpty) {
@@ -76,6 +77,7 @@ class DetectedTransaction {
       amount: amount,
       date: transactionDate,
       notes: noteParts.isEmpty ? null : noteParts.join(' • '),
+      bikeName: bikeName,
     );
   }
 }

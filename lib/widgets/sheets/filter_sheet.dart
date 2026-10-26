@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import '../../providers/bike_provider.dart';
 import '../../providers/expense_provider.dart';
 
 class FilterSheet extends ConsumerWidget {
@@ -15,6 +16,11 @@ class FilterSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(expenseFilterProvider);
     final notifier = ref.read(expenseFilterProvider.notifier);
+    final bikes = ref.watch(selectableBikesProvider);
+    final bikeState = ref.watch(bikeProvider);
+    final activeBikeName = filter.selectedBikeName ?? bikeState.selectedBike?.name;
+    final isAllMachines = filter.selectedBikeName == 'All';
+
     final currentYear = DateTime.now().year;
     final years = List.generate(
       currentYear - 2020 + 1,
@@ -48,7 +54,95 @@ class FilterSheet extends ConsumerWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+
+          // ── Machine Selector (Multi-bike only) ───────
+          if (bikes.length > 1) ...[
+            const Text(
+              'Machine',
+              style: TextStyle(
+                color: AppColors.textDim,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    notifier.setSelectedBikeName('All');
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 140),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isAllMachines ? const Color(0xFF00FF88) : AppColors.iconBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isAllMachines ? const Color(0xFF00FF88) : AppColors.border,
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      'All Machines',
+                      style: TextStyle(
+                        color: isAllMachines ? Colors.black : AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                ...bikes.map((bike) {
+                  final sel = !isAllMachines &&
+                      activeBikeName?.toLowerCase() == bike.name.toLowerCase();
+                  return GestureDetector(
+                    onTap: () {
+                      ref.read(bikeProvider.notifier).selectBike(bike);
+                      notifier.setSelectedBikeName(bike.name);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 140),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: sel ? const Color(0xFF00FF88) : AppColors.iconBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: sel ? const Color(0xFF00FF88) : AppColors.border,
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        bike.name,
+                        style: TextStyle(
+                          color: sel ? Colors.black : AppColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // ── Period mode ───────────────────────────────
+          const Text(
+            'Period',
+            style: TextStyle(
+              color: AppColors.textDim,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 10),
 
           // ── Mode selector row ─────────────────────────
           Row(

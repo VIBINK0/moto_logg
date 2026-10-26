@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import '../../providers/bike_provider.dart';
+import '../../providers/expense_provider.dart';
 import '../../providers/mileage_provider.dart';
 
 class AddMileageSheet extends ConsumerStatefulWidget {
@@ -14,8 +16,20 @@ class _AddMileageSheetState extends ConsumerState<AddMileageSheet> {
   final _odoCtrl = TextEditingController();
   final _fuelCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
+  String? _selectedBike;
   bool _loading = false;
   String? _err;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bike = ref.read(bikeProvider).selectedBike;
+      if (bike != null) {
+        setState(() => _selectedBike = bike.name);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -45,6 +59,7 @@ class _AddMileageSheetState extends ConsumerState<AddMileageSheet> {
             odometerReading: odo,
             fuelLiters: fuel,
             pricePerLiter: price,
+            bikeName: _selectedBike,
           );
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -58,6 +73,7 @@ class _AddMileageSheetState extends ConsumerState<AddMileageSheet> {
   @override
   Widget build(BuildContext context) {
     final inset = MediaQuery.of(context).viewInsets.bottom;
+    final bikes = ref.watch(selectableBikesProvider);
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(20, 0, 20, inset + 28),
@@ -85,7 +101,45 @@ class _AddMileageSheetState extends ConsumerState<AddMileageSheet> {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+
+          // ── Machine Choice Chips (Multi-bike only) ───────
+          if (bikes.length > 1) ...[
+            const _SheetLabel('MACHINE / BIKE'),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: bikes.map((b) {
+                  final isSelected = _selectedBike?.toLowerCase() == b.name.toLowerCase();
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(b.name),
+                      selected: isSelected,
+                      selectedColor: const Color(0xFF00FF88),
+                      backgroundColor: AppColors.cardBg,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.black : Colors.white,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 12,
+                      ),
+                      side: BorderSide(
+                        color: isSelected ? const Color(0xFF00FF88) : AppColors.border,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() => _selectedBike = b.name);
+                          ref.read(bikeProvider.notifier).selectBike(b);
+                        }
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           const _SheetLabel('ODOMETER READING (KM)'),
           const SizedBox(height: 8),
           _SheetField(
